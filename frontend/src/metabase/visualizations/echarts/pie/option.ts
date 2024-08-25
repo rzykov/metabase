@@ -102,9 +102,21 @@ function getTotalGraphicOption(
   };
 }
 
-function getRadiusOption(sideLength: number) {
+function getRadiusOption(
+  sideLength: number,
+  settings: ComputedVisualizationSettings,
+) {
+  let innerRadiusRatio = DIMENSIONS.slice.innerRadiusRatio;
+  if (settings["pie.middle_dimension"] != null) {
+    innerRadiusRatio = DIMENSIONS.slice.twoRingInnerRadiusRatio;
+
+    if (settings["pie.outer_dimension"] != null) {
+      innerRadiusRatio = DIMENSIONS.slice.threeRingInnerRadiusRatio;
+    }
+  }
+
   const outerRadius = sideLength / 2;
-  const innerRadius = outerRadius * DIMENSIONS.slice.innerRadiusRatio;
+  const innerRadius = outerRadius * innerRadiusRatio;
 
   return { outerRadius, innerRadius };
 }
@@ -160,9 +172,12 @@ export function getPieChartOption(
     sideLength - DIMENSIONS.padding.side * 2,
     DIMENSIONS.maxSideLength,
   );
-  const { outerRadius, innerRadius } = getRadiusOption(innerSideLength);
+  const { outerRadius, innerRadius } = getRadiusOption(
+    innerSideLength,
+    settings,
+  );
 
-  const borderWidth = 1; // TODO update this, confirm with product
+  const borderWidth = 1; // TODO update this, confirm with design
   // (Math.PI * innerSideLength) / DIMENSIONS.slice.borderProportion; // arc length formula: s = 2πr(θ/360°), we want border to be 1 degree
 
   const fontSize = Math.max(

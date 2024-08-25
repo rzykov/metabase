@@ -8,6 +8,8 @@ export const DIMENSIONS = {
   },
   slice: {
     innerRadiusRatio: 3 / 5,
+    twoRingInnerRadiusRatio: 2 / 5, // TODO confirm with design
+    threeRingInnerRadiusRatio: 1 / 4,
     borderProportion: 360, // 1 degree
     maxFontSize: 20,
     minFontSize: 14,
