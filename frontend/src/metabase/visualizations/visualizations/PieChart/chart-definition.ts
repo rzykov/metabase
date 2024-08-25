@@ -90,6 +90,14 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
       title: t`Dimension`,
       showColumnSetting: true,
     }),
+    "pie.middle_dimension": {
+      hidden: true,
+      getDefault: () => undefined,
+    },
+    "pie.outer_dimension": {
+      hidden: true,
+      getDefault: () => undefined,
+    },
     "pie.rows": {
       section: t`Data`,
       widget: ChartSettingOrderedSimple,

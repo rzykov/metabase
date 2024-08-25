@@ -16,6 +16,8 @@ export interface PieRow {
 export interface PieColumnDescriptors {
   metricDesc: ColumnDescriptor;
   dimensionDesc: ColumnDescriptor;
+  middleDimensionDesc?: ColumnDescriptor;
+  outerDimensionDesc?: ColumnDescriptor;
 }
 
 export interface PieSliceData {
@@ -28,6 +30,7 @@ export interface PieSliceData {
   isOther: boolean;
   noHover: boolean;
   includeInLegend: boolean;
+  children: PieArcDatum<PieSliceData>[];
   rowIndex?: number;
 }
 

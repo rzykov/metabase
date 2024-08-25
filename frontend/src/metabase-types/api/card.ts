@@ -209,6 +209,8 @@ export type VisualizationSettings = {
 
   // Pie Settings
   "pie.dimension"?: string;
+  "pie.middle_dimension"?: string;
+  "pie.outer_dimension"?: string;
   "pie.rows"?: PieRow[];
   "pie.metric"?: string;
   "pie.sort_rows"?: boolean;

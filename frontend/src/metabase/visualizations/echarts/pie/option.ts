@@ -1,5 +1,5 @@
 import Color from "color";
-import type { EChartsOption } from "echarts";
+import type { EChartsOption, SunburstSeriesOption } from "echarts";
 
 import { getTextColorForBackground } from "metabase/lib/colors";
 import { truncateText } from "metabase/static-viz/lib/text";
@@ -162,8 +162,8 @@ export function getPieChartOption(
   );
   const { outerRadius, innerRadius } = getRadiusOption(innerSideLength);
 
-  const borderWidth =
-    (Math.PI * innerSideLength) / DIMENSIONS.slice.borderProportion; // arc length formula: s = 2πr(θ/360°), we want border to be 1 degree
+  const borderWidth = 1; // TODO update this, confirm with product
+  // (Math.PI * innerSideLength) / DIMENSIONS.slice.borderProportion; // arc length formula: s = 2πr(θ/360°), we want border to be 1 degree
 
   const fontSize = Math.max(
     DIMENSIONS.slice.maxFontSize * (innerSideLength / DIMENSIONS.maxSideLength),
@@ -197,52 +197,62 @@ export function getPieChartOption(
   };
 
   // Series data
-  const data = chartModel.slices.map(s => {
-    const labelColor = getTextColorForBackground(
-      s.data.color,
-      renderingContext.getColor,
-    );
-    const label = formatSlicePercent(s.data.key);
-    const isLabelVisible = getIsLabelVisible(
-      label,
-      s,
-      innerRadius,
-      outerRadius,
-      fontSize,
-      renderingContext,
-    );
+  function getSeriesDataFromSlices(
+    slices: PieSlice[],
+  ): SunburstSeriesOption["data"] {
+    if (slices.length === 0) {
+      return [];
+    }
 
-    return {
-      value: s.data.value,
-      name: s.data.key,
-      itemStyle: { color: s.data.color },
-      label: {
-        color: labelColor,
-        formatter: () => (isLabelVisible ? label : " "),
-      },
-      emphasis: {
-        itemStyle: {
-          color: s.data.color,
-          borderColor: renderingContext.theme.pie.borderColor,
-        },
-      },
-      blur: {
-        itemStyle: {
-          // We have to fade the slices through `color` rather than `opacity`
-          // becuase echarts' will apply the opacity to the white border,
-          // causing the underlying color to leak. It is safe to use non-hex
-          // values here, since this value will never be used in batik
-          // (there's no emphasis/blur for static viz).
-          color: Color(s.data.color).fade(0.7).rgb().string(),
-          opacity: 1,
-        },
+    return slices.map(s => {
+      const labelColor = getTextColorForBackground(
+        s.data.color,
+        renderingContext.getColor,
+      );
+      const label = formatSlicePercent(s.data.key);
+      const isLabelVisible = getIsLabelVisible(
+        label,
+        s,
+        innerRadius,
+        outerRadius,
+        fontSize,
+        renderingContext,
+      );
+
+      return {
+        children: getSeriesDataFromSlices(s.data.children),
+        value: s.data.value,
+        name: s.data.key,
+        itemStyle: { color: s.data.color },
         label: {
-          opacity:
-            labelColor === renderingContext.getColor("text-dark") ? 0.3 : 1,
+          color: labelColor,
+          formatter: () => (isLabelVisible ? label : " "),
         },
-      },
-    };
-  });
+        emphasis: {
+          itemStyle: {
+            color: s.data.color,
+            borderColor: renderingContext.theme.pie.borderColor,
+          },
+        },
+        blur: {
+          itemStyle: {
+            // We have to fade the slices through `color` rather than `opacity`
+            // becuase echarts' will apply the opacity to the white border,
+            // causing the underlying color to leak. It is safe to use non-hex
+            // values here, since this value will never be used in batik
+            // (there's no emphasis/blur for static viz).
+            color: Color(s.data.color).fade(0.7).rgb().string(),
+            opacity: 1,
+          },
+          label: {
+            opacity:
+              labelColor === renderingContext.getColor("text-dark") ? 0.3 : 1,
+          },
+        },
+      };
+    });
+  }
+  const data = getSeriesDataFromSlices(chartModel.slices);
 
   return {
     // Unlike the cartesian chart, `animationDuration: 0` does not prevent the
