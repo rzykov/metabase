@@ -2,6 +2,7 @@ import Color from "color";
 import type { EChartsOption, SunburstSeriesOption } from "echarts";
 
 import { getTextColorForBackground } from "metabase/lib/colors";
+import { checkNotNull } from "metabase/lib/types";
 import { truncateText } from "metabase/static-viz/lib/text";
 import type {
   ComputedVisualizationSettings,
@@ -10,7 +11,13 @@ import type {
 
 import { DIMENSIONS, TOTAL_TEXT } from "./constants";
 import type { PieChartFormatters } from "./format";
-import type { PieChartModel, PieSlice, PieSliceData } from "./model/types";
+import type {
+  PieChartModel,
+  PieSlice,
+  PieSliceData,
+  SliceTree,
+  SliceTreeNode,
+} from "./model/types";
 
 function getSliceByKey(key: PieSliceData["key"], slices: PieSlice[]) {
   const slice = slices.find(s => s.data.key === key);
@@ -31,6 +38,7 @@ function getTotalGraphicOption(
   formatters: PieChartFormatters,
   renderingContext: RenderingContext,
   hoveredIndex: number | undefined,
+  hoveredSliceKeyPath: string[] | undefined,
   outerRadius: number,
 ) {
   let valueText = "";
@@ -40,10 +48,27 @@ function getTotalGraphicOption(
   const hasSufficientWidth = outerRadius * 2 >= DIMENSIONS.total.minWidth;
 
   if (hasSufficientWidth && settings["pie.show_total"]) {
-    const sliceValueOrTotal =
-      hoveredIndex != null
-        ? chartModel.slices[hoveredIndex].data.displayValue
-        : chartModel.total;
+    let sliceValueOrTotal = 0;
+
+    if (hoveredSliceKeyPath != null) {
+      let sliceTreeNode: SliceTreeNode | undefined = undefined;
+
+      for (const key of hoveredSliceKeyPath) {
+        const sliceTree: SliceTree =
+          sliceTreeNode == null ? chartModel.sliceTree : sliceTreeNode.children;
+
+        sliceTreeNode = checkNotNull(sliceTree.get(key));
+      }
+
+      sliceValueOrTotal = checkNotNull(sliceTreeNode).value;
+      labelText = checkNotNull(sliceTreeNode?.name);
+    } else if (hoveredIndex != null) {
+      sliceValueOrTotal = chartModel.slices[hoveredIndex].data.displayValue;
+      labelText = chartModel.slices[hoveredIndex].data.name.toUpperCase();
+    } else {
+      sliceValueOrTotal = chartModel.total;
+      labelText = TOTAL_TEXT;
+    }
 
     const valueWillOverflow =
       renderingContext.measureText(formatters.formatMetric(sliceValueOrTotal), {
@@ -58,9 +83,7 @@ function getTotalGraphicOption(
       DIMENSIONS.total.valueFontSize,
     );
     labelText = truncateText(
-      hoveredIndex != null
-        ? chartModel.slices[hoveredIndex].data.name.toUpperCase()
-        : TOTAL_TEXT,
+      labelText,
       outerRadius,
       DIMENSIONS.total.labelFontSize,
     );
@@ -166,6 +189,7 @@ export function getPieChartOption(
   renderingContext: RenderingContext,
   sideLength: number,
   hoveredIndex?: number,
+  hoveredSliceKeyPath?: string[],
 ): EChartsOption {
   // Sizing
   const innerSideLength = Math.min(
@@ -193,6 +217,7 @@ export function getPieChartOption(
     formatters,
     renderingContext,
     hoveredIndex,
+    hoveredSliceKeyPath,
     outerRadius,
   );
 

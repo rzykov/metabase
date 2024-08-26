@@ -29,6 +29,7 @@ export function PieChart(props: VisualizationProps) {
     isFullscreen,
   } = props;
   const hoveredIndex = props.hovered?.index;
+  const hoveredSliceKeyPath = props.hovered?.pieSliceKeyPath;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<EChartsType>();
@@ -61,6 +62,7 @@ export function PieChart(props: VisualizationProps) {
         renderingContext,
         sideLength,
         hoveredIndex,
+        hoveredSliceKeyPath,
       ),
       tooltip: getTooltipOption(chartModel, formatters, containerRef),
     }),
@@ -71,6 +73,7 @@ export function PieChart(props: VisualizationProps) {
       renderingContext,
       sideLength,
       hoveredIndex,
+      hoveredSliceKeyPath,
     ],
   );
 

@@ -220,6 +220,7 @@ export function getPieChartModel(
     // echarts, and echarts casts numbers to strings
     sliceTree.set(String(pieRow.key), {
       key: pieRow.key,
+      name: pieRow.name,
       value: pieRow.value,
       children: new Map(),
       index: index,
@@ -257,6 +258,7 @@ export function getPieChartModel(
         // create it.
         middleDimensionNode = {
           key: middleDimensionKey,
+          name: String(row[colDescs.middleDimensionDesc.index]), // TODO formatting
           value: metricValue,
           children: new Map(),
         };
@@ -285,6 +287,7 @@ export function getPieChartModel(
       if (outerDimensionNode == null) {
         outerDimensionNode = {
           key: outerDimensionKey,
+          name: String(row[colDescs.outerDimensionDesc.index]), // TODO formatting
           value: metricValue,
           children: new Map(),
         };
@@ -335,6 +338,7 @@ export function getPieChartModel(
   if (otherTotal > 0) {
     sliceTree.set(OTHER_SLICE_KEY, {
       key: OTHER_SLICE_KEY,
+      name: OTHER_SLICE_KEY,
       value: otherTotal,
       children: new Map(),
       index: slices.length,
@@ -367,6 +371,7 @@ export function getPieChartModel(
   if (slices.length === 0) {
     sliceTree.set(OTHER_SLICE_KEY, {
       key: OTHER_SLICE_KEY,
+      name: OTHER_SLICE_KEY,
       value: otherTotal,
       children: new Map(),
       index: slices.length,
@@ -387,7 +392,7 @@ export function getPieChartModel(
   }
 
   return {
-    slices: d3Pie(slices), // TODO replace with sliceTree?
+    slices: d3Pie(slices),
     otherSlices: d3Pie(others),
     sliceTree,
     total,

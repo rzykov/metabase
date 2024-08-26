@@ -36,8 +36,9 @@ export interface PieSliceData {
 
 export type PieSlice = PieArcDatum<PieSliceData>;
 
-type SliceTreeNode = {
-  key: string | number;
+export type SliceTreeNode = {
+  key: string | number; // dimension value
+  name: string; // formatted name
   value: number;
   children: SliceTree;
   index?: number;
