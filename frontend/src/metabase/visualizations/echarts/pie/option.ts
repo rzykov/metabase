@@ -180,10 +180,11 @@ export function getPieChartOption(
   const borderWidth = 1; // TODO update this, confirm with design
   // (Math.PI * innerSideLength) / DIMENSIONS.slice.borderProportion; // arc length formula: s = 2πr(θ/360°), we want border to be 1 degree
 
-  const fontSize = Math.max(
-    DIMENSIONS.slice.maxFontSize * (innerSideLength / DIMENSIONS.maxSideLength),
-    DIMENSIONS.slice.minFontSize,
-  );
+  const fontSize = 12; // TODO update this
+  //  Math.max(
+  //   DIMENSIONS.slice.maxFontSize * (innerSideLength / DIMENSIONS.maxSideLength),
+  //   DIMENSIONS.slice.minFontSize,
+  // );
 
   // "Show total" setting
   const graphicOption = getTotalGraphicOption(
@@ -224,7 +225,7 @@ export function getPieChartOption(
         s.data.color,
         renderingContext.getColor,
       );
-      const label = formatSlicePercent(s.data.key);
+      const label = s.data.name; // TODO update this, combine with percent if needed, check setting
       const isLabelVisible = getIsLabelVisible(
         label,
         s,
@@ -288,7 +289,6 @@ export function getPieChartOption(
         borderColor: renderingContext.theme.pie.borderColor,
       },
       label: {
-        rotate: 0,
         overflow: "none",
         fontSize,
         fontWeight: DIMENSIONS.slice.label.fontWeight,
