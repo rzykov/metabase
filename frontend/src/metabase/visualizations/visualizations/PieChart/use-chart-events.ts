@@ -14,11 +14,11 @@ import {
 } from "metabase/visualizations/components/ChartTooltip/StackedDataTooltip/utils";
 import type { PieChartFormatters } from "metabase/visualizations/echarts/pie/format";
 import type { PieChartModel } from "metabase/visualizations/echarts/pie/model/types";
+import type { EChartsSunburstSeriesMouseEvent } from "metabase/visualizations/echarts/pie/types";
 import {
   getMarkerColorClass,
   useClickedStateTooltipSync,
 } from "metabase/visualizations/echarts/tooltip";
-import type { EChartsSeriesMouseEvent } from "metabase/visualizations/echarts/types";
 import { getFriendlyName } from "metabase/visualizations/lib/utils";
 import type {
   ClickObject,
@@ -79,30 +79,31 @@ export const getTooltipModel = (
 };
 
 const dataIndexToHoveredIndex = (index: number) => index - 1;
-const hoveredIndexToDataIndex = (index: number) => index + 1;
 
 function getHoverData(
-  event: EChartsSeriesMouseEvent,
+  event: EChartsSunburstSeriesMouseEvent,
   chartModel: PieChartModel,
 ) {
   if (event.dataIndex == null) {
     return null;
   }
-  const index = dataIndexToHoveredIndex(event.dataIndex);
 
-  const indexOutOfBounds = chartModel.slices[index] == null;
-  if (indexOutOfBounds || chartModel.slices[index].data.noHover) {
-    return null;
+  const pieSliceKeyPath = event.treePathInfo.slice(1).map(info => info.name);
+
+  const dimensionNode = chartModel.sliceTree.get(pieSliceKeyPath[0]);
+  if (dimensionNode == null) {
+    throw Error(`Could not find dimensionNode for key ${pieSliceKeyPath[0]}`);
   }
 
   return {
-    index,
+    index: dimensionNode.index,
     event: event.event.event,
+    pieSliceKeyPath,
   };
 }
 
 function handleClick(
-  event: EChartsSeriesMouseEvent,
+  event: EChartsSunburstSeriesMouseEvent,
   dataProp: VisualizationProps["data"],
   settings: VisualizationProps["settings"],
   visualizationIsClickable: VisualizationProps["visualizationIsClickable"],
@@ -161,21 +162,23 @@ export function useChartEvents(
         return;
       }
 
+      const name = String(chartModel.slices[hoveredIndex].data.key);
+
       chart.dispatchAction({
         type: "highlight",
-        dataIndex: hoveredIndexToDataIndex(hoveredIndex),
+        name,
         seriesIndex: 0,
       });
 
       return () => {
         chart.dispatchAction({
           type: "downplay",
-          dataIndex: hoveredIndexToDataIndex(hoveredIndex),
+          name,
           seriesIndex: 0,
         });
       };
     },
-    [chart, hoveredIndex],
+    [chart, chartModel, hoveredIndex],
   );
 
   useClickedStateTooltipSync(chartRef.current, props.clicked);
@@ -192,14 +195,14 @@ export function useChartEvents(
       {
         eventName: "mousemove",
         query: "series",
-        handler: (event: EChartsSeriesMouseEvent) => {
+        handler: (event: EChartsSunburstSeriesMouseEvent) => {
           onHoverChange?.(getHoverData(event, chartModel));
         },
       },
       {
         eventName: "click",
         query: "series",
-        handler: (event: EChartsSeriesMouseEvent) => {
+        handler: (event: EChartsSunburstSeriesMouseEvent) => {
           handleClick(
             event,
             data,

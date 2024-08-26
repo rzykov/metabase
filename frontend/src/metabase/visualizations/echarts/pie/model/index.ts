@@ -23,13 +23,8 @@ import type {
   PieColumnDescriptors,
   PieSlice,
   PieSliceData,
+  SliceTree,
 } from "./types";
-
-type SliceTreeNode = {
-  key: string | number;
-  value: number;
-  children: Map<string | number, SliceTreeNode>;
-};
 
 function getColDescs(
   rawSeries: RawSeries,
@@ -215,22 +210,25 @@ export function getPieChartModel(
     .value(s => s.value);
 
   // Add child slices for middle and outer rings
-  if (colDescs.middleDimensionDesc != null) {
-    // Step 1. Build a tree using maps to represent slice parent child relationships.
+  // Step 1. Build a tree using maps to represent slice parent child relationships.
 
-    // To start we fill out the first layer, the innermost slices based on
-    // "pie.dimension"
-    const sliceTree: Map<string | number, SliceTreeNode> = new Map();
-    pieRowsWithValues.forEach(pieRow => {
-      sliceTree.set(pieRow.key, {
-        key: pieRow.key,
-        value: pieRow.value,
-        children: new Map(),
-      });
+  // To start we fill out the first layer, the innermost slices based on
+  // "pie.dimension"
+  const sliceTree: SliceTree = new Map();
+  pieRowsWithValues.forEach((pieRow, index) => {
+    // Map key needs to be string, because we use it for lookup with values from
+    // echarts, and echarts casts numbers to strings
+    sliceTree.set(String(pieRow.key), {
+      key: pieRow.key,
+      value: pieRow.value,
+      children: new Map(),
+      index: index,
     });
+  });
 
-    // Iterate through non-aggregated rows from query result to build layers for
-    // the middle and outer ring slices.
+  // Iterate through non-aggregated rows from query result to build layers for
+  // the middle and outer ring slices.
+  if (colDescs.middleDimensionDesc != null) {
     dataRows.forEach(row => {
       // Needed to tell typescript it's defined
       if (colDescs.middleDimensionDesc == null) {
@@ -240,7 +238,7 @@ export function getPieChartModel(
       const dimensionKey = getKeyFromDimensionValue(
         row[colDescs.dimensionDesc.index],
       );
-      const dimensionNode = sliceTree.get(dimensionKey);
+      const dimensionNode = sliceTree.get(String(dimensionKey));
       if (dimensionNode == null) {
         throw new Error(`Could not find dimensionNode for key ${dimensionKey}`);
       }
@@ -250,7 +248,9 @@ export function getPieChartModel(
       const middleDimensionKey = getKeyFromDimensionValue(
         row[colDescs.middleDimensionDesc.index],
       );
-      let middleDimensionNode = dimensionNode.children.get(middleDimensionKey);
+      let middleDimensionNode = dimensionNode.children.get(
+        String(middleDimensionKey),
+      );
 
       if (middleDimensionNode == null) {
         // If there is no node for this middle dimension value in the tree
@@ -260,7 +260,10 @@ export function getPieChartModel(
           value: metricValue,
           children: new Map(),
         };
-        dimensionNode.children.set(middleDimensionKey, middleDimensionNode);
+        dimensionNode.children.set(
+          String(middleDimensionKey),
+          middleDimensionNode,
+        );
       } else {
         // If the node already exists, add the metric value from the current row
         // to it.
@@ -275,8 +278,9 @@ export function getPieChartModel(
         row[colDescs.outerDimensionDesc.index],
       );
 
-      let outerDimensionNode =
-        middleDimensionNode.children.get(outerDimensionKey);
+      let outerDimensionNode = middleDimensionNode.children.get(
+        String(outerDimensionKey),
+      );
 
       if (outerDimensionNode == null) {
         outerDimensionNode = {
@@ -284,22 +288,22 @@ export function getPieChartModel(
           value: metricValue,
           children: new Map(),
         };
-        middleDimensionNode.children.set(outerDimensionKey, outerDimensionNode);
+        middleDimensionNode.children.set(
+          String(outerDimensionKey),
+          outerDimensionNode,
+        );
       } else {
         outerDimensionNode.value += metricValue;
       }
     });
 
     // Step 2. Add slices from tree nodes to chartModel.slices array
-
     slices.forEach(slice => {
-      const sliceTreeNode = sliceTree.get(slice.key);
+      const sliceTreeNode = sliceTree.get(String(slice.key));
       if (sliceTreeNode == null) {
         throw Error(`No sliceTreeNode found for key ${slice.key}`);
       }
-      function getSlicesFromChildren(
-        children: Map<string | number, SliceTreeNode>,
-      ): PieSlice[] {
+      function getSlicesFromChildren(children: SliceTree): PieSlice[] {
         const childrenArray = Array(...children.values());
         if (childrenArray.length === 0) {
           return [];
@@ -329,6 +333,13 @@ export function getPieChartModel(
   // Only add "other" slice if there are slices below threshold with non-zero total
   const otherTotal = others.reduce((currTotal, o) => currTotal + o.value, 0);
   if (otherTotal > 0) {
+    sliceTree.set(OTHER_SLICE_KEY, {
+      key: OTHER_SLICE_KEY,
+      value: otherTotal,
+      children: new Map(),
+      index: slices.length,
+    });
+
     slices.push({
       key: OTHER_SLICE_KEY,
       name: OTHER_SLICE_KEY,
@@ -354,6 +365,13 @@ export function getPieChartModel(
 
   // If there are no non-zero slices, we'll display a single "other" slice
   if (slices.length === 0) {
+    sliceTree.set(OTHER_SLICE_KEY, {
+      key: OTHER_SLICE_KEY,
+      value: otherTotal,
+      children: new Map(),
+      index: slices.length,
+    });
+
     slices.push({
       key: OTHER_SLICE_KEY,
       name: OTHER_SLICE_KEY,
@@ -369,8 +387,9 @@ export function getPieChartModel(
   }
 
   return {
-    slices: d3Pie(slices),
+    slices: d3Pie(slices), // TODO replace with sliceTree?
     otherSlices: d3Pie(others),
+    sliceTree,
     total,
     colDescs,
   };

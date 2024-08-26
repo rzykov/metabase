@@ -20,6 +20,9 @@ const ChartItemTooltip = ({
   formatters,
   dataIndex,
 }: ChartItemTooltip) => {
+  return null;
+  // TODO update getTooltipModel
+
   const tooltipModel = getTooltipModel(dataIndex, chartModel, formatters);
   return <EChartsTooltip {...tooltipModel} />;
 };

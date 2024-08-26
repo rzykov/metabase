@@ -36,9 +36,19 @@ export interface PieSliceData {
 
 export type PieSlice = PieArcDatum<PieSliceData>;
 
+type SliceTreeNode = {
+  key: string | number;
+  value: number;
+  children: SliceTree;
+  index?: number;
+};
+
+export type SliceTree = Map<string, SliceTreeNode>;
+
 export interface PieChartModel {
   slices: PieSlice[];
   otherSlices: PieSlice[];
+  sliceTree: SliceTree;
   total: number;
   colDescs: PieColumnDescriptors;
 }
