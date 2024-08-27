@@ -11,6 +11,8 @@ export const DIMENSIONS = {
     twoRingInnerRadiusRatio: 2 / 5,
     threeRingInnerRadiusRatio: 1 / 4,
     borderProportion: 360, // 1 degree
+    twoRingBorderWidth: 1,
+    threeRingBorderWidth: 0.3,
     maxFontSize: 20,
     minFontSize: 14,
     label: {

@@ -192,8 +192,8 @@ export function getPieChartOption(
     settings,
   );
 
-  const borderWidth = 1; // TODO update this, confirm with design
-  // (Math.PI * innerSideLength) / DIMENSIONS.slice.borderProportion; // arc length formula: s = 2πr(θ/360°), we want border to be 1 degree
+  const borderWidth =
+    (Math.PI * innerSideLength) / DIMENSIONS.slice.borderProportion; // arc length formula: s = 2πr(θ/360°), we want border to be 1 degree
 
   const fontSize = 12; // TODO update this
   //  Math.max(
@@ -231,9 +231,18 @@ export function getPieChartOption(
   // Series data
   function getSeriesDataFromSlices(
     slices: PieSlice[],
+    ring = 1,
   ): SunburstSeriesOption["data"] {
     if (slices.length === 0) {
       return [];
+    }
+
+    let ringBorderWidth = borderWidth;
+    if (ring === 2) {
+      ringBorderWidth = DIMENSIONS.slice.twoRingBorderWidth;
+    }
+    if (ring === 3) {
+      ringBorderWidth = DIMENSIONS.slice.threeRingBorderWidth;
     }
 
     return slices.map(s => {
@@ -252,10 +261,10 @@ export function getPieChartOption(
       );
 
       return {
-        children: getSeriesDataFromSlices(s.data.children),
+        children: getSeriesDataFromSlices(s.data.children, ring + 1),
         value: s.data.value,
         name: s.data.key,
-        itemStyle: { color: s.data.color },
+        itemStyle: { color: s.data.color, borderWidth: ringBorderWidth },
         label: {
           color: labelColor,
           formatter: () => (isLabelVisible ? label : " "),
@@ -301,7 +310,6 @@ export function getPieChartOption(
       nodeClick: false,
       radius: [innerRadius, outerRadius],
       itemStyle: {
-        borderWidth,
         borderColor: renderingContext.theme.pie.borderColor,
       },
       label: {
