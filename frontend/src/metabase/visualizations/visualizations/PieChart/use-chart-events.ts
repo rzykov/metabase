@@ -3,6 +3,7 @@ import { type MutableRefObject, useEffect, useMemo } from "react";
 import { t } from "ttag";
 import _ from "underscore";
 
+import { checkNotNull } from "metabase/lib/types";
 import { formatPercent } from "metabase/static-viz/lib/numbers";
 import type {
   EChartsTooltipModel,
@@ -15,6 +16,7 @@ import {
 import type { PieChartFormatters } from "metabase/visualizations/echarts/pie/format";
 import type { PieChartModel } from "metabase/visualizations/echarts/pie/model/types";
 import type { EChartsSunburstSeriesMouseEvent } from "metabase/visualizations/echarts/pie/types";
+import { getSliceTreeNodesFromPath } from "metabase/visualizations/echarts/pie/util";
 import {
   getMarkerColorClass,
   useClickedStateTooltipSync,
@@ -80,6 +82,9 @@ export const getTooltipModel = (
 
 const dataIndexToHoveredIndex = (index: number) => index - 1;
 
+const getSliceKeyPath = (event: EChartsSunburstSeriesMouseEvent) =>
+  event.treePathInfo.slice(1).map(info => info.name);
+
 function getHoverData(
   event: EChartsSunburstSeriesMouseEvent,
   chartModel: PieChartModel,
@@ -88,7 +93,7 @@ function getHoverData(
     return null;
   }
 
-  const pieSliceKeyPath = event.treePathInfo.slice(1).map(info => info.name);
+  const pieSliceKeyPath = getSliceKeyPath(event);
 
   const dimensionNode = chartModel.sliceTree.get(pieSliceKeyPath[0]);
   if (dimensionNode == null) {
@@ -96,7 +101,7 @@ function getHoverData(
   }
 
   return {
-    index: dimensionNode.index,
+    index: dimensionNode.legendHoverIndex,
     event: event.event.event,
     pieSliceKeyPath,
   };
@@ -110,33 +115,42 @@ function handleClick(
   onVisualizationClick: VisualizationProps["onVisualizationClick"],
   chartModel: PieChartModel,
 ) {
-  if (!event.dataIndex) {
+  if (event.dataIndex == null) {
     return;
   }
-  const slice = chartModel.slices[dataIndexToHoveredIndex(event.dataIndex)];
+
+  const { sliceTreeNode, nodes } = getSliceTreeNodesFromPath(
+    chartModel.sliceTree,
+    getSliceKeyPath(event),
+  );
+
+  if (sliceTreeNode.isOther) {
+    return;
+  }
+
+  const rowIndex = sliceTreeNode.rowIndex;
+
   const data =
-    slice.data.rowIndex != null
-      ? dataProp.rows[slice.data.rowIndex].map((value, index) => ({
+    rowIndex != null
+      ? dataProp.rows[rowIndex].map((value, index) => ({
           value,
           col: dataProp.cols[index],
         }))
       : undefined;
 
   const clickObject: ClickObject = {
-    value: slice.data.value,
+    value: sliceTreeNode.value,
     column: chartModel.colDescs.metricDesc.column,
     data,
-    dimensions: [
-      {
-        value: slice.data.key,
-        column: chartModel.colDescs.dimensionDesc.column,
-      },
-    ],
+    dimensions: nodes.map(node => ({
+      value: node.key,
+      column: checkNotNull(node.column),
+    })),
     settings,
     event: event.event.event,
   };
 
-  if (visualizationIsClickable(clickObject) && !slice.data.isOther) {
+  if (visualizationIsClickable(clickObject)) {
     onVisualizationClick(clickObject);
   }
 }

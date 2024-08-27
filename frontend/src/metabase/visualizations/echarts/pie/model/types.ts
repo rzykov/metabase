@@ -1,6 +1,7 @@
 import type { PieArcDatum } from "d3";
 
 import type { ColumnDescriptor } from "metabase/visualizations/lib/graph/columns";
+import type { RemappingHydratedDatasetColumn } from "metabase/visualizations/types";
 
 export interface PieRow {
   key: string | number;
@@ -41,7 +42,10 @@ export type SliceTreeNode = {
   name: string; // formatted name
   value: number;
   children: SliceTree;
-  index?: number;
+  column?: RemappingHydratedDatasetColumn;
+  rowIndex?: number;
+  legendHoverIndex?: number;
+  isOther?: boolean;
 };
 
 export type SliceTree = Map<string, SliceTreeNode>;

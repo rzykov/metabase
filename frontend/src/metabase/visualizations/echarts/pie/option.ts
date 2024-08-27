@@ -11,13 +11,8 @@ import type {
 
 import { DIMENSIONS, TOTAL_TEXT } from "./constants";
 import type { PieChartFormatters } from "./format";
-import type {
-  PieChartModel,
-  PieSlice,
-  PieSliceData,
-  SliceTree,
-  SliceTreeNode,
-} from "./model/types";
+import type { PieChartModel, PieSlice, PieSliceData } from "./model/types";
+import { getSliceTreeNodesFromPath } from "./util";
 
 function getSliceByKey(key: PieSliceData["key"], slices: PieSlice[]) {
   const slice = slices.find(s => s.data.key === key);
@@ -51,14 +46,10 @@ function getTotalGraphicOption(
     let sliceValueOrTotal = 0;
 
     if (hoveredSliceKeyPath != null) {
-      let sliceTreeNode: SliceTreeNode | undefined = undefined;
-
-      for (const key of hoveredSliceKeyPath) {
-        const sliceTree: SliceTree =
-          sliceTreeNode == null ? chartModel.sliceTree : sliceTreeNode.children;
-
-        sliceTreeNode = checkNotNull(sliceTree.get(key));
-      }
+      const { sliceTreeNode } = getSliceTreeNodesFromPath(
+        chartModel.sliceTree,
+        hoveredSliceKeyPath,
+      );
 
       sliceValueOrTotal = checkNotNull(sliceTreeNode).value;
       labelText = checkNotNull(sliceTreeNode?.name);

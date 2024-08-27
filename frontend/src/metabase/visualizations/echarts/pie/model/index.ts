@@ -223,14 +223,16 @@ export function getPieChartModel(
       name: pieRow.name,
       value: pieRow.value,
       children: new Map(),
-      index: index,
+      column: colDescs.dimensionDesc.column,
+      rowIndex: checkNotNull(rowIndiciesByKey.get(pieRow.key)),
+      legendHoverIndex: index,
     });
   });
 
   // Iterate through non-aggregated rows from query result to build layers for
   // the middle and outer ring slices.
   if (colDescs.middleDimensionDesc != null) {
-    dataRows.forEach(row => {
+    dataRows.forEach((row, index) => {
       // Needed to tell typescript it's defined
       if (colDescs.middleDimensionDesc == null) {
         throw new Error(`Missing middleDimensionDesc`);
@@ -260,6 +262,8 @@ export function getPieChartModel(
           key: middleDimensionKey,
           name: String(row[colDescs.middleDimensionDesc.index]), // TODO formatting
           value: metricValue,
+          column: colDescs.middleDimensionDesc.column,
+          rowIndex: index,
           children: new Map(),
         };
         dimensionNode.children.set(
@@ -289,6 +293,8 @@ export function getPieChartModel(
           key: outerDimensionKey,
           name: String(row[colDescs.outerDimensionDesc.index]), // TODO formatting
           value: metricValue,
+          column: colDescs.outerDimensionDesc.column,
+          rowIndex: index,
           children: new Map(),
         };
         middleDimensionNode.children.set(
@@ -341,7 +347,8 @@ export function getPieChartModel(
       name: OTHER_SLICE_KEY,
       value: otherTotal,
       children: new Map(),
-      index: slices.length,
+      legendHoverIndex: slices.length,
+      isOther: true,
     });
 
     slices.push({
@@ -374,7 +381,8 @@ export function getPieChartModel(
       name: OTHER_SLICE_KEY,
       value: otherTotal,
       children: new Map(),
-      index: slices.length,
+      legendHoverIndex: slices.length,
+      isOther: true,
     });
 
     slices.push({
@@ -392,7 +400,7 @@ export function getPieChartModel(
   }
 
   return {
-    slices: d3Pie(slices),
+    slices: d3Pie(slices), // TODO replace with just sliceTree, get the d3 data in there somehow
     otherSlices: d3Pie(others),
     sliceTree,
     total,
