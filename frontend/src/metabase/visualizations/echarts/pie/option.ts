@@ -312,6 +312,9 @@ export function getPieChartOption(
       labelLayout: {
         hideOverlap: true,
       },
+      emphasis: {
+        focus: "ancestor",
+      },
       data,
     },
   };
