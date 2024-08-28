@@ -9270,6 +9270,22 @@ databaseChangeLog:
                   type: ${text.type}
                   remarks: running, failed, or completed
 
+
+  - changeSet:
+      id: v51.2024-08-28T07:03:41
+      author: johnswanson
+      comment: Add `report_card.dashboard_id`
+      changes:
+        - addColumn:
+            tableName: report_card
+            columns:
+              - column:
+                  name: dashboard_id
+                  type: int
+                  remarks: The dashboard that owns the card, if it is a dashboard-internal card.
+                  constraints:
+                    nullable: true
+
   # >>>>>>>>>> DO NOT ADD NEW MIGRATIONS BELOW THIS LINE! ADD THEM ABOVE <<<<<<<<<<
 
 ########################################################################################################################
