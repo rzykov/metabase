@@ -268,6 +268,7 @@ export function getPieChartOption(
         label: {
           color: labelColor,
           formatter: () => (isLabelVisible ? label : " "),
+          rotate: ring === 1 ? 0 : "radial",
         },
         emphasis: {
           itemStyle: {
