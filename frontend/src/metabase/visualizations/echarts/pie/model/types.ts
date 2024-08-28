@@ -41,6 +41,7 @@ export type SliceTreeNode = {
   key: string | number; // dimension value
   name: string; // formatted name
   value: number;
+  color: string;
   children: SliceTree;
   column?: RemappingHydratedDatasetColumn;
   rowIndex?: number;

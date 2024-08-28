@@ -10,8 +10,9 @@ export interface EChartsTooltipRow {
   /* We pass CSS class with marker colors because setting styles in tooltip rendered by ECharts violates CSP */
   markerColorClass?: string;
   name: string;
-  isFocused?: boolean;
   values: React.ReactNode[];
+  isFocused?: boolean;
+  key?: string;
 }
 
 export interface EChartsTooltipFooter {
@@ -64,7 +65,7 @@ export const EChartsTooltip = ({
       >
         <tbody>
           {paddedRows.map((row, index) => {
-            return <TooltipRow key={index} {...row} />;
+            return <TooltipRow key={String(index)} {...row} />;
           })}
         </tbody>
         {footer != null && (

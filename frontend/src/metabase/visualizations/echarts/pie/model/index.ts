@@ -222,6 +222,7 @@ export function getPieChartModel(
       key: pieRow.key,
       name: pieRow.name,
       value: pieRow.value,
+      color: pieRow.color,
       children: new Map(),
       column: colDescs.dimensionDesc.column,
       rowIndex: checkNotNull(rowIndiciesByKey.get(pieRow.key)),
@@ -262,6 +263,7 @@ export function getPieChartModel(
           key: middleDimensionKey,
           name: String(row[colDescs.middleDimensionDesc.index]), // TODO formatting
           value: metricValue,
+          color: "", // TODO use correct color for tooltip
           column: colDescs.middleDimensionDesc.column,
           rowIndex: index,
           children: new Map(),
@@ -293,6 +295,7 @@ export function getPieChartModel(
           key: outerDimensionKey,
           name: String(row[colDescs.outerDimensionDesc.index]), // TODO formatting
           value: metricValue,
+          color: "",
           column: colDescs.outerDimensionDesc.column,
           rowIndex: index,
           children: new Map(),
@@ -346,6 +349,7 @@ export function getPieChartModel(
       key: OTHER_SLICE_KEY,
       name: OTHER_SLICE_KEY,
       value: otherTotal,
+      color: renderingContext.getColor("text-light"),
       children: new Map(),
       legendHoverIndex: slices.length,
       isOther: true,
@@ -365,14 +369,17 @@ export function getPieChartModel(
     });
   }
 
-  slices.forEach(slice => {
-    // TODO do this for middle and outer rings as well
-    // We increase the size of small slices, otherwise they will not be visible
-    // in echarts due to the border rendering over the tiny slice
-    if (slice.normalizedPercentage < OTHER_SLICE_MIN_PERCENTAGE) {
-      slice.value = total * OTHER_SLICE_MIN_PERCENTAGE;
-    }
-  });
+  // We increase the size of small slices, otherwise they will not be visible
+  // in echarts due to the border rendering over the tiny slice
+  function resizeSmallSlices(slices: PieSliceData[]) {
+    slices.forEach(slice => {
+      if (slice.normalizedPercentage < OTHER_SLICE_MIN_PERCENTAGE) {
+        slice.value = total * OTHER_SLICE_MIN_PERCENTAGE;
+      }
+      resizeSmallSlices(slice.children.map(slice => slice.data));
+    });
+  }
+  resizeSmallSlices(slices);
 
   // If there are no non-zero slices, we'll display a single "other" slice
   if (slices.length === 0) {
@@ -380,6 +387,7 @@ export function getPieChartModel(
       key: OTHER_SLICE_KEY,
       name: OTHER_SLICE_KEY,
       value: otherTotal,
+      color: renderingContext.getColor("text-light"),
       children: new Map(),
       legendHoverIndex: slices.length,
       isOther: true,

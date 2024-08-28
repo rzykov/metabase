@@ -16,7 +16,10 @@ import {
 import type { PieChartFormatters } from "metabase/visualizations/echarts/pie/format";
 import type { PieChartModel } from "metabase/visualizations/echarts/pie/model/types";
 import type { EChartsSunburstSeriesMouseEvent } from "metabase/visualizations/echarts/pie/types";
-import { getSliceTreeNodesFromPath } from "metabase/visualizations/echarts/pie/util";
+import {
+  getSliceKeyPath,
+  getSliceTreeNodesFromPath,
+} from "metabase/visualizations/echarts/pie/util";
 import {
   getMarkerColorClass,
   useClickedStateTooltipSync,
@@ -29,33 +32,34 @@ import type {
 import type { EChartsEventHandler } from "metabase/visualizations/types/echarts";
 
 export const getTooltipModel = (
-  dataIndex: number,
+  sliceKeyPath: string[],
   chartModel: PieChartModel,
   formatters: PieChartFormatters,
 ): EChartsTooltipModel => {
-  const hoveredIndex = dataIndexToHoveredIndex(dataIndex);
-  const hoveredOther =
-    chartModel.slices[hoveredIndex].data.isOther &&
-    chartModel.otherSlices.length > 1;
-
-  const rows = (hoveredOther ? chartModel.otherSlices : chartModel.slices).map(
-    slice => ({
-      name: slice.data.name,
-      value: slice.data.displayValue,
-      color: hoveredOther ? undefined : slice.data.color,
-      formatter: formatters.formatMetric,
-    }),
+  const { sliceTreeNode, nodes } = getSliceTreeNodesFromPath(
+    chartModel.sliceTree,
+    sliceKeyPath,
   );
+  const siblingNodes =
+    nodes.length >= 2
+      ? Array(...nodes[nodes.length - 2].children.values())
+      : Array(...chartModel.sliceTree.values());
 
+  const rows = siblingNodes.map(slice => ({
+    name: slice.name,
+    value: slice.value,
+    color: slice.color,
+    formatter: formatters.formatMetric,
+    key: slice.key,
+  }));
   const rowsTotal = getTotalValue(rows);
-  const isShowingTotalSensible = rows.length > 1;
 
-  const formattedRows: EChartsTooltipRow[] = rows.map((row, index) => {
+  const formattedRows: EChartsTooltipRow[] = rows.map(row => {
     const markerColorClass = row.color
       ? getMarkerColorClass(row.color)
       : undefined;
     return {
-      isFocused: !hoveredOther && index === hoveredIndex,
+      isFocused: !sliceTreeNode.isOther && row.key === sliceTreeNode.key,
       markerColorClass,
       name: row.name,
       values: [
@@ -66,24 +70,26 @@ export const getTooltipModel = (
   });
 
   return {
-    header: getFriendlyName(chartModel.colDescs.dimensionDesc.column),
+    header:
+      nodes.length === 1
+        ? getFriendlyName(sliceTreeNode.column)
+        : nodes
+            .slice(0, -1)
+            .map(node => node.name)
+            .join("  >  "),
     rows: formattedRows,
-    footer: isShowingTotalSensible
-      ? {
-          name: t`Total`,
-          values: [
-            formatters.formatMetric(rowsTotal),
-            formatPercent(getPercent(chartModel.total, rowsTotal) ?? 0),
-          ],
-        }
-      : undefined,
+    footer:
+      rows.length > 1
+        ? {
+            name: t`Total`,
+            values: [
+              formatters.formatMetric(rowsTotal),
+              formatPercent(getPercent(chartModel.total, rowsTotal) ?? 0),
+            ],
+          }
+        : undefined,
   };
 };
-
-const dataIndexToHoveredIndex = (index: number) => index - 1;
-
-const getSliceKeyPath = (event: EChartsSunburstSeriesMouseEvent) =>
-  event.treePathInfo.slice(1).map(info => info.name);
 
 function getHoverData(
   event: EChartsSunburstSeriesMouseEvent,
