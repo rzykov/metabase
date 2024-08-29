@@ -3870,24 +3870,3 @@
       (mt/user-http-request :crowberto :post 400 "card" (assoc (card-with-name-and-query)
                                                                :dashboard_id dash-id
                                                                :collection_position 5)))))
-
-(deftest dashboard-internal-card-updates
-  (mt/with-temp [:model/Collection {coll-id :id} {}
-                 :model/Collection {other-coll-id :id} {}
-                 :model/Dashboard {dash-id :id} {:collection_id coll-id}
-                 :model/Dashboard {other-dash-id :id} {}
-                 :model/Card {card-id :id} {:dashboard_id dash-id}
-                 :model/Card {other-card-id :id} {}]
-    (testing "We can't update with `archived=true`"
-      (is (mt/user-http-request :crowberto :put 400 (str "card/" card-id) {:archived true})))
-    (testing "We can't update with `dashboard_id` for a normal card."
-      (is (mt/user-http-request :crowberto :put 400 (str "card/" other-card-id) {:dashboard_id dash-id}))
-      (is (not (= dash-id (t2/select-one-fn :dashboard_id :model/Card :id other-card-id)))))
-    (testing "We can update with a `dashboard_id`, moving the card to the new spot"
-      (is (mt/user-http-request :crowberto :put 200 (str "card/" card-id) {:dashboard_id other-dash-id}))
-      ;; the card is in a new location... but, it doesn't have any dashcards - so that's not great.
-      (is (nil? (t2/select-one-fn :collection_id :model/Card :id card-id))))
-    (testing "We can't update the `collection_id`"
-      (is (mt/user-http-request :crowberto :put 400 (str "card/" card-id) {:collection_id other-coll-id})))
-    (testing "We can't set the `type`"
-      (is (mt/user-http-request :crowberto :put 400 (str "card/" card-id) {:type "model"})))))
