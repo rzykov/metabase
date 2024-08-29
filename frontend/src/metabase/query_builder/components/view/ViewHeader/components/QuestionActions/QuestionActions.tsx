@@ -92,6 +92,10 @@ export const QuestionActions = ({
     : undefined;
 
   const isQuestion = question.type() === "question";
+  const isDashboardQuestion =
+    isQuestion && typeof question.dashboardId() !== undefined;
+  const isStandaloneQuestion =
+    isQuestion && question.dashboardId() === undefined;
   const isModel = question.type() === "model";
   const isMetric = question.type() === "metric";
   const isModelOrMetric = isModel || isMetric;
@@ -186,7 +190,7 @@ export const QuestionActions = ({
     });
   }
 
-  if (isQuestion || isMetric) {
+  if (isStandaloneQuestion || isMetric) {
     extraButtons.push({
       title: t`Add to dashboard`,
       icon: "add_to_dash",
@@ -195,7 +199,7 @@ export const QuestionActions = ({
     });
   }
 
-  if (hasCollectionPermissions) {
+  if (isStandaloneQuestion && hasCollectionPermissions) {
     extraButtons.push({
       title: t`Move`,
       icon: "move",
@@ -214,7 +218,7 @@ export const QuestionActions = ({
   }
 
   if (hasCollectionPermissions) {
-    if (isQuestion) {
+    if (isStandaloneQuestion) {
       extraButtons.push({
         title: t`Turn into a model`,
         icon: "model",
@@ -233,7 +237,7 @@ export const QuestionActions = ({
 
   extraButtons.push(...PLUGIN_QUERY_BUILDER_HEADER.extraButtons(question));
 
-  if (hasCollectionPermissions) {
+  if (!isDashboardQuestion && hasCollectionPermissions) {
     extraButtons.push({
       title: t`Move to trash`,
       icon: "trash",
@@ -337,10 +341,18 @@ export const QuestionActions = ({
       )}
       {extraButtons.length > 0 && !question.isArchived() && (
         <EntityMenu
-          triggerAriaLabel={t`Move, trash, and more...`}
+          triggerAriaLabel={
+            isDashboardQuestion
+              ? t`Verify, duplicate, and more...`
+              : t`Move, trash, and more...`
+          }
           items={extraButtons}
           triggerIcon="ellipsis"
-          tooltip={t`Move, trash, and more...`}
+          tooltip={
+            isDashboardQuestion
+              ? t`Verify, duplicate, and more...`
+              : t`Move, trash, and more...`
+          }
         />
       )}
     </>
