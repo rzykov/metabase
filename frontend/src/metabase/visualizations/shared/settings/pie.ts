@@ -5,6 +5,7 @@ import { getColorsForValues } from "metabase/lib/colors/charts";
 import { NULL_DISPLAY_VALUE } from "metabase/lib/constants";
 import { checkNotNull, checkNumber, isNumber } from "metabase/lib/types";
 import { SLICE_THRESHOLD } from "metabase/visualizations/echarts/pie/constants";
+import { getDimensionFormatter } from "metabase/visualizations/echarts/pie/format";
 import type { PieRow } from "metabase/visualizations/echarts/pie/model/types";
 import type { ShowWarning } from "metabase/visualizations/echarts/types";
 import { getNumberOr } from "metabase/visualizations/lib/settings/row-values";
@@ -159,11 +160,6 @@ export function getPieRows(
     },
   ] = rawSeries;
 
-  const getColumnSettings = settings["column"];
-  if (!getColumnSettings) {
-    throw Error("`settings.column` is undefined");
-  }
-
   const dimensionCol = cols.find(c => c.name === settings["pie.dimension"]);
   if (dimensionCol == null) {
     throw Error(
@@ -171,15 +167,11 @@ export function getPieRows(
     );
   }
 
-  const dimensionColSettings = getColumnSettings(dimensionCol);
-
-  const formatDimensionValue = (value: RowValue) => {
-    if (value == null) {
-      return NULL_DISPLAY_VALUE;
-    }
-
-    return formatter(value, dimensionColSettings);
-  };
+  const formatDimensionValue = getDimensionFormatter(
+    settings,
+    dimensionCol,
+    formatter,
+  );
 
   const dimensionIndex = cols.findIndex(
     col => col.name === settings["pie.dimension"],

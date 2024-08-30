@@ -17,6 +17,7 @@ import type { RawSeries } from "metabase-types/api";
 
 import type { ShowWarning } from "../../types";
 import { OTHER_SLICE_KEY, OTHER_SLICE_MIN_PERCENTAGE } from "../constants";
+import { getDimensionFormatter } from "../format";
 
 import type {
   PieChartModel,
@@ -233,6 +234,21 @@ export function getPieChartModel(
   // Iterate through non-aggregated rows from query result to build layers for
   // the middle and outer ring slices.
   if (colDescs.middleDimensionDesc != null) {
+    const formatMiddleDimensionValue = getDimensionFormatter(
+      settings,
+      colDescs.middleDimensionDesc.column,
+      renderingContext.formatValue,
+    );
+
+    const formatOuterDimensionValue =
+      colDescs.outerDimensionDesc?.column != null
+        ? getDimensionFormatter(
+            settings,
+            colDescs.outerDimensionDesc.column,
+            renderingContext.formatValue,
+          )
+        : undefined;
+
     dataRows.forEach((row, index) => {
       // Needed to tell typescript it's defined
       if (colDescs.middleDimensionDesc == null) {
@@ -261,7 +277,9 @@ export function getPieChartModel(
         // create it.
         middleDimensionNode = {
           key: middleDimensionKey,
-          name: String(row[colDescs.middleDimensionDesc.index]), // TODO formatting
+          name: formatMiddleDimensionValue(
+            row[colDescs.middleDimensionDesc.index],
+          ),
           value: metricValue,
           color: "", // TODO use correct color for tooltip
           column: colDescs.middleDimensionDesc.column,
@@ -293,7 +311,10 @@ export function getPieChartModel(
       if (outerDimensionNode == null) {
         outerDimensionNode = {
           key: outerDimensionKey,
-          name: String(row[colDescs.outerDimensionDesc.index]), // TODO formatting
+          name:
+            formatOuterDimensionValue?.(
+              row[colDescs.outerDimensionDesc.index],
+            ) ?? "",
           value: metricValue,
           color: "",
           column: colDescs.outerDimensionDesc.column,
@@ -315,16 +336,21 @@ export function getPieChartModel(
       if (sliceTreeNode == null) {
         throw Error(`No sliceTreeNode found for key ${slice.key}`);
       }
-      function getSlicesFromChildren(children: SliceTree): PieSlice[] {
+      function getSlicesFromChildren(
+        children: SliceTree,
+        ring: number,
+      ): PieSlice[] {
         const childrenArray = Array(...children.values());
         if (childrenArray.length === 0) {
           return [];
         }
+        const formatter =
+          ring === 2 ? formatMiddleDimensionValue : formatOuterDimensionValue;
 
         return d3Pie(
           childrenArray.map(({ key, value, children }) => ({
             key,
-            name: String(key), // TODO formatting
+            name: formatter?.(key) ?? "",
             value: isNonPositive ? -1 * value : value,
             displayValue: value,
             normalizedPercentage: value / total, // slice percentage values are normalized to 0-1 scale
@@ -333,12 +359,12 @@ export function getPieChartModel(
             isOther: false,
             noHover: false,
             includeInLegend: false,
-            children: getSlicesFromChildren(children),
+            children: getSlicesFromChildren(children, ring + 1),
           })),
         );
       }
 
-      slice.children = getSlicesFromChildren(sliceTreeNode.children);
+      slice.children = getSlicesFromChildren(sliceTreeNode.children, 2);
     });
   }
 
