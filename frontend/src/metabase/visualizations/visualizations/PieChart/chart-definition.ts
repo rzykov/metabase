@@ -16,13 +16,14 @@ import {
 } from "metabase/visualizations/lib/settings/utils";
 import {
   getDefaultPercentVisibility,
+  getDefaultShowLabels,
   getDefaultShowLegend,
+  getDefaultShowTotal,
   getDefaultSliceThreshold,
   getDefaultSortRows,
   getPieRows,
 } from "metabase/visualizations/shared/settings/pie";
 import { SERIES_SETTING_KEY } from "metabase/visualizations/shared/settings/series";
-import { getDefaultShowTotal } from "metabase/visualizations/shared/settings/waterfall";
 import {
   getDefaultSize,
   getMinSize,
@@ -208,6 +209,14 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
       title: t`Show total`,
       widget: "toggle",
       getDefault: getDefaultShowTotal,
+      inline: true,
+      marginBottom: "1rem",
+    },
+    "pie.show_labels": {
+      section: t`Display`,
+      title: t`Show labels`,
+      widget: "toggle",
+      getDefault: (_rawSeries, settings) => getDefaultShowLabels(settings),
       inline: true,
     },
     "pie.percent_visibility": {

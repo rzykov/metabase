@@ -24,6 +24,13 @@ export const getDefaultShowLegend = () => true;
 
 export const getDefaultShowTotal = () => true;
 
+export function getDefaultShowLabels(settings: ComputedVisualizationSettings) {
+  if (settings["pie.middle_dimension"] == null) {
+    return false;
+  }
+  return true;
+}
+
 export const getDefaultPercentVisibility = () => "legend";
 
 export const getDefaultSliceThreshold = () => SLICE_THRESHOLD * 100;

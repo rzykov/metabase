@@ -11,21 +11,8 @@ import type {
 
 import { DIMENSIONS, TOTAL_TEXT } from "./constants";
 import type { PieChartFormatters } from "./format";
-import type { PieChartModel, PieSlice, PieSliceData } from "./model/types";
+import type { PieChartModel, PieSlice } from "./model/types";
 import { getSliceTreeNodesFromPath } from "./util";
-
-function getSliceByKey(key: PieSliceData["key"], slices: PieSlice[]) {
-  const slice = slices.find(s => s.data.key === key);
-  if (!slice) {
-    throw Error(
-      `Could not find slice with key ${key} in slices: ${JSON.stringify(
-        slices,
-      )}`,
-    );
-  }
-
-  return slice;
-}
 
 function getTotalGraphicOption(
   settings: ComputedVisualizationSettings,
@@ -135,6 +122,30 @@ function getRadiusOption(
   return { outerRadius, innerRadius };
 }
 
+function getSliceLabel(
+  slice: PieSlice,
+  settings: ComputedVisualizationSettings,
+  formatters: PieChartFormatters,
+) {
+  const name = settings["pie.show_labels"] ? slice.data.name : undefined;
+  const percent =
+    settings["pie.percent_visibility"] === "inside" ||
+    settings["pie.percent_visibility"] === "both"
+      ? formatters.formatPercent(slice.data.normalizedPercentage, "chart")
+      : undefined;
+
+  if (name != null && percent != null) {
+    return `${name}: ${percent}`;
+  }
+  if (name != null) {
+    return name;
+  }
+  if (percent != null) {
+    return percent;
+  }
+  return " ";
+}
+
 function getIsLabelVisible(
   label: string,
   slice: PieSlice,
@@ -212,22 +223,6 @@ export function getPieChartOption(
     outerRadius,
   );
 
-  // "Show percentages: On the chart" setting
-  const formatSlicePercent = (key: PieSliceData["key"]) => {
-    if (
-      settings["pie.percent_visibility"] == null ||
-      settings["pie.percent_visibility"] === "off" ||
-      settings["pie.percent_visibility"] === "legend"
-    ) {
-      return " ";
-    }
-
-    return formatters.formatPercent(
-      getSliceByKey(key, chartModel.slices).data.normalizedPercentage,
-      "chart",
-    );
-  };
-
   // Series data
   function getSeriesDataFromSlices(
     slices: PieSlice[],
@@ -250,7 +245,7 @@ export function getPieChartOption(
         s.data.color,
         renderingContext.getColor,
       );
-      const label = s.data.name; // TODO update this, combine with percent if needed, check setting
+      const label = getSliceLabel(s, settings, formatters);
       const isLabelVisible = getIsLabelVisible(
         label,
         s,

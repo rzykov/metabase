@@ -216,6 +216,7 @@ export type VisualizationSettings = {
   "pie.sort_rows"?: boolean;
   "pie.show_legend"?: boolean;
   "pie.show_total"?: boolean;
+  "pie.show_labels"?: boolean;
   "pie.percent_visibility"?: "off" | "legend" | "inside" | "both";
   "pie.decimal_places"?: number;
   "pie.slice_threshold"?: number;
