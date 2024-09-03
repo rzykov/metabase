@@ -17,6 +17,7 @@ import type { PieChartFormatters } from "metabase/visualizations/echarts/pie/for
 import type { PieChartModel } from "metabase/visualizations/echarts/pie/model/types";
 import type { EChartsSunburstSeriesMouseEvent } from "metabase/visualizations/echarts/pie/types";
 import {
+  getInnerRingSlices,
   getSliceKeyPath,
   getSliceTreeNodesFromPath,
 } from "metabase/visualizations/echarts/pie/util";
@@ -43,7 +44,7 @@ export const getTooltipModel = (
   const siblingNodes =
     nodes.length >= 2
       ? Array(...nodes[nodes.length - 2].children.values())
-      : Array(...chartModel.sliceTree.values());
+      : getInnerRingSlices(chartModel);
 
   const rows = siblingNodes.map(slice => ({
     name: slice.name,
@@ -182,7 +183,7 @@ export function useChartEvents(
         return;
       }
 
-      const name = String(chartModel.slices[hoveredIndex].data.key);
+      const name = String(getInnerRingSlices(chartModel)[hoveredIndex].key);
 
       chart.dispatchAction({
         type: "highlight",

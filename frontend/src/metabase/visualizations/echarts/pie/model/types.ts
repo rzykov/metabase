@@ -1,5 +1,3 @@
-import type { PieArcDatum } from "d3";
-
 import type { ColumnDescriptor } from "metabase/visualizations/lib/graph/columns";
 import type { RemappingHydratedDatasetColumn } from "metabase/visualizations/types";
 
@@ -21,39 +19,28 @@ export interface PieColumnDescriptors {
   outerDimensionDesc?: ColumnDescriptor;
 }
 
-export interface PieSliceData {
+export type SliceTreeNode = {
+  // TODO just make key a string, raw value only need to create formatted name
   key: string | number; // dimension value, used to lookup slices
   name: string; // display name, already formatted
   value: number; // size of the slice used for rendering
   displayValue: number; // real metric value of the slice displayed in tooltip or total graphic
   normalizedPercentage: number;
   color: string;
-  isOther: boolean;
-  noHover: boolean;
-  includeInLegend: boolean;
-  children: PieArcDatum<PieSliceData>[];
-  rowIndex?: number;
-}
-
-export type PieSlice = PieArcDatum<PieSliceData>;
-
-export type SliceTreeNode = {
-  key: string | number; // dimension value
-  name: string; // formatted name
-  value: number;
-  color: string;
+  startAngle: number;
+  endAngle: number;
   children: SliceTree;
   column?: RemappingHydratedDatasetColumn;
   rowIndex?: number;
   legendHoverIndex?: number;
   isOther?: boolean;
+  noHover?: boolean;
+  includeInLegend?: boolean;
 };
 
 export type SliceTree = Map<string, SliceTreeNode>;
 
 export interface PieChartModel {
-  slices: PieSlice[];
-  otherSlices: PieSlice[];
   sliceTree: SliceTree;
   total: number;
   colDescs: PieColumnDescriptors;

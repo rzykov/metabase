@@ -6,6 +6,7 @@ import { getPieChartFormatters } from "metabase/visualizations/echarts/pie/forma
 import { getPieChartModel } from "metabase/visualizations/echarts/pie/model";
 import { getPieChartOption } from "metabase/visualizations/echarts/pie/option";
 import { getTooltipOption } from "metabase/visualizations/echarts/pie/tooltip";
+import { getInnerRingSlices } from "metabase/visualizations/echarts/pie/util";
 import {
   useCloseTooltipOnScroll,
   usePieChartValuesColorsClasses,
@@ -90,23 +91,21 @@ export function PieChart(props: VisualizationProps) {
 
   const eventHandlers = useChartEvents(props, chartRef, chartModel);
 
-  const legendTitles = chartModel.slices
-    .filter(s => s.data.includeInLegend)
+  const slices = getInnerRingSlices(chartModel);
+  const legendTitles = slices
+    .filter(s => s.includeInLegend)
     .map(s => {
-      const label = s.data.isOther ? s.data.key : s.data.name;
+      const label = s.isOther ? s.key : s.name;
 
       const percent =
         settings["pie.percent_visibility"] === "legend" ||
         settings["pie.percent_visibility"] === "both"
-          ? formatters.formatPercent(s.data.normalizedPercentage, "legend")
+          ? formatters.formatPercent(s.normalizedPercentage, "legend")
           : undefined;
 
       return [label, percent];
     });
-
-  const legendColors = chartModel.slices
-    .filter(s => s.data.includeInLegend)
-    .map(s => s.data.color);
+  const legendColors = slices.filter(s => s.includeInLegend).map(s => s.color);
 
   const showLegend = settings["pie.show_legend"];
 

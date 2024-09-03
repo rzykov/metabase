@@ -22,9 +22,8 @@ import { getDimensionFormatter } from "../format";
 import type {
   PieChartModel,
   PieColumnDescriptors,
-  PieSlice,
-  PieSliceData,
   SliceTree,
+  SliceTreeNode,
 } from "./types";
 
 function getColDescs(
@@ -175,60 +174,41 @@ export function getPieChartModel(
     return currTotal + value;
   }, 0);
 
-  const [slices, others] = _.chain(pieRowsWithValues)
-    .map(({ value, color, key, name, isOther }): PieSliceData => {
-      return {
-        key,
-        name,
-        value: isNonPositive ? -1 * value : value,
-        displayValue: value,
-        normalizedPercentage: value / total, // slice percentage values are normalized to 0-1 scale
-        rowIndex: rowIndiciesByKey.get(key),
-        color,
-        isOther,
-        noHover: false,
-        includeInLegend: true,
-        children: [],
-      };
-    })
+  // Create sliceTree, fill out first layer, the innermost slices based on
+  // "pie.dimension"
+  const sliceTree: SliceTree = new Map();
+  const [sliceTreeNodes, others] = _.chain(pieRowsWithValues)
+    .map(({ value, color, key, name, isOther }, index) => ({
+      key,
+      name,
+      value,
+      displayValue: value,
+      normalizedPercentage: value / total, // slice percentage values are normalized to 0-1 scale
+      color,
+      children: new Map(),
+      column: colDescs.dimensionDesc.column,
+      rowIndex: checkNotNull(rowIndiciesByKey.get(key)),
+      legendHoverIndex: index,
+      isOther,
+      startAngle: 0, // placeholders
+      endAngle: 0,
+    }))
     .filter(slice => isNonPositive || slice.value > 0)
     .partition(slice => slice != null && !slice.isOther)
     .value();
+  //
 
   // We don't show the grey other slice if there isn't more than one slice to
   // group into it
   if (others.length === 1) {
     const singleOtherSlice = others.pop();
-    slices.push(checkNotNull(singleOtherSlice));
+    sliceTreeNodes.push(checkNotNull(singleOtherSlice));
   }
 
-  // We need d3 slices for the label formatter, to determine if we should the
-  // percent label on the chart for a specific slice
-  const d3Pie = pie<PieSliceData>()
-    .sort(null)
-    // 1 degree in radians
-    .padAngle((Math.PI / 180) * 1)
-    .value(s => s.value);
-
-  // Add child slices for middle and outer rings
-  // Step 1. Build a tree using maps to represent slice parent child relationships.
-
-  // To start we fill out the first layer, the innermost slices based on
-  // "pie.dimension"
-  const sliceTree: SliceTree = new Map();
-  pieRowsWithValues.forEach((pieRow, index) => {
+  sliceTreeNodes.forEach(node => {
     // Map key needs to be string, because we use it for lookup with values from
     // echarts, and echarts casts numbers to strings
-    sliceTree.set(String(pieRow.key), {
-      key: pieRow.key,
-      name: pieRow.name,
-      value: pieRow.value,
-      color: pieRow.color,
-      children: new Map(),
-      column: colDescs.dimensionDesc.column,
-      rowIndex: checkNotNull(rowIndiciesByKey.get(pieRow.key)),
-      legendHoverIndex: index,
-    });
+    sliceTree.set(String(node.key), node);
   });
 
   // Iterate through non-aggregated rows from query result to build layers for
@@ -281,10 +261,14 @@ export function getPieChartModel(
             row[colDescs.middleDimensionDesc.index],
           ),
           value: metricValue,
-          color: "", // TODO use correct color for tooltip
+          displayValue: metricValue,
+          normalizedPercentage: metricValue / total,
+          color: dimensionNode.color, // TODO use light/dark color
           column: colDescs.middleDimensionDesc.column,
           rowIndex: index,
           children: new Map(),
+          startAngle: 0,
+          endAngle: 0,
         };
         dimensionNode.children.set(
           String(middleDimensionKey),
@@ -316,10 +300,14 @@ export function getPieChartModel(
               row[colDescs.outerDimensionDesc.index],
             ) ?? "",
           value: metricValue,
-          color: "",
+          displayValue: metricValue,
+          normalizedPercentage: metricValue / total,
+          color: dimensionNode.color, // TODO use light/dark color
           column: colDescs.outerDimensionDesc.column,
           rowIndex: index,
           children: new Map(),
+          startAngle: 0,
+          endAngle: 0,
         };
         middleDimensionNode.children.set(
           String(outerDimensionKey),
@@ -329,113 +317,79 @@ export function getPieChartModel(
         outerDimensionNode.value += metricValue;
       }
     });
-
-    // Step 2. Add slices from tree nodes to chartModel.slices array
-    slices.forEach(slice => {
-      const sliceTreeNode = sliceTree.get(String(slice.key));
-      if (sliceTreeNode == null) {
-        throw Error(`No sliceTreeNode found for key ${slice.key}`);
-      }
-      function getSlicesFromChildren(
-        children: SliceTree,
-        ring: number,
-      ): PieSlice[] {
-        const childrenArray = Array(...children.values());
-        if (childrenArray.length === 0) {
-          return [];
-        }
-        const formatter =
-          ring === 2 ? formatMiddleDimensionValue : formatOuterDimensionValue;
-
-        return d3Pie(
-          childrenArray.map(({ key, value, children }) => ({
-            key,
-            name: formatter?.(key) ?? "",
-            value: isNonPositive ? -1 * value : value,
-            displayValue: value,
-            normalizedPercentage: value / total, // slice percentage values are normalized to 0-1 scale
-            rowIndex: 0, // TODO need this for creating new tooltip
-            color: slice.color, // TODO update this
-            isOther: false,
-            noHover: false,
-            includeInLegend: false,
-            children: getSlicesFromChildren(children, ring + 1),
-          })),
-        );
-      }
-
-      slice.children = getSlicesFromChildren(sliceTreeNode.children, 2);
-    });
   }
 
   // Only add "other" slice if there are slices below threshold with non-zero total
   const otherTotal = others.reduce((currTotal, o) => currTotal + o.value, 0);
   if (otherTotal > 0) {
-    sliceTree.set(OTHER_SLICE_KEY, {
-      key: OTHER_SLICE_KEY,
-      name: OTHER_SLICE_KEY,
-      value: otherTotal,
-      color: renderingContext.getColor("text-light"),
-      children: new Map(),
-      legendHoverIndex: slices.length,
-      isOther: true,
+    const children: SliceTree = new Map();
+    others.forEach(node => {
+      children.set(String(node.key), node);
     });
 
-    slices.push({
+    sliceTree.set(OTHER_SLICE_KEY, {
       key: OTHER_SLICE_KEY,
       name: OTHER_SLICE_KEY,
       value: otherTotal,
       displayValue: otherTotal,
       normalizedPercentage: otherTotal / total,
       color: renderingContext.getColor("text-light"),
+      children,
+      legendHoverIndex: sliceTree.size,
       isOther: true,
-      noHover: false,
-      includeInLegend: true,
-      children: [],
+      startAngle: 0,
+      endAngle: 0,
     });
   }
 
+  // We need start and end angles for the label formatter, to determine if we
+  // should the percent label on the chart for a specific slice. To get these we
+  // need to use d3.
+  // TODO recursively apply this to other rings
+  const d3Pie = pie<SliceTreeNode>()
+    .sort(null)
+    // 1 degree in radians
+    .padAngle((Math.PI / 180) * 1)
+    .value(s => s.value);
+
+  const d3Slices = d3Pie(Array(...sliceTreeNodes.values()));
+  d3Slices.forEach((d3Slice, index) => {
+    sliceTreeNodes[index].startAngle = d3Slice.startAngle;
+    sliceTreeNodes[index].endAngle = d3Slice.endAngle;
+  });
+
   // We increase the size of small slices, otherwise they will not be visible
   // in echarts due to the border rendering over the tiny slice
-  function resizeSmallSlices(slices: PieSliceData[]) {
+  function resizeSmallSlices(slices: SliceTreeNode[]) {
     slices.forEach(slice => {
       if (slice.normalizedPercentage < OTHER_SLICE_MIN_PERCENTAGE) {
         slice.value = total * OTHER_SLICE_MIN_PERCENTAGE;
       }
-      resizeSmallSlices(slice.children.map(slice => slice.data));
+      resizeSmallSlices(Array(...slice.children.values()));
     });
   }
-  resizeSmallSlices(slices);
+  resizeSmallSlices(Array(...sliceTree.values()));
 
   // If there are no non-zero slices, we'll display a single "other" slice
-  if (slices.length === 0) {
+  if (sliceTree.size === 0) {
     sliceTree.set(OTHER_SLICE_KEY, {
-      key: OTHER_SLICE_KEY,
-      name: OTHER_SLICE_KEY,
-      value: otherTotal,
-      color: renderingContext.getColor("text-light"),
-      children: new Map(),
-      legendHoverIndex: slices.length,
-      isOther: true,
-    });
-
-    slices.push({
       key: OTHER_SLICE_KEY,
       name: OTHER_SLICE_KEY,
       value: 1,
       displayValue: 0,
       normalizedPercentage: 0,
       color: renderingContext.getColor("text-light"),
+      children: new Map(),
+      legendHoverIndex: 0,
       isOther: true,
       noHover: true,
       includeInLegend: false,
-      children: [],
+      startAngle: 0,
+      endAngle: 1,
     });
   }
 
   return {
-    slices: d3Pie(slices), // TODO replace with just sliceTree, get the d3 data in there somehow
-    otherSlices: d3Pie(others),
     sliceTree,
     total,
     colDescs,

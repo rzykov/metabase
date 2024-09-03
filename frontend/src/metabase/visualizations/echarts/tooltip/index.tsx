@@ -9,6 +9,7 @@ import type { ClickObject } from "metabase-lib";
 
 import type { BaseCartesianChartModel } from "../cartesian/model/types";
 import type { PieChartModel } from "../pie/model/types";
+import { getInnerRingSlices } from "../pie/util";
 
 export const TOOLTIP_POINTER_MARGIN = 10;
 
@@ -144,8 +145,8 @@ export const useCartesianChartSeriesColorsClasses = (
 
 export const usePieChartValuesColorsClasses = (chartModel: PieChartModel) => {
   const hexColors = useMemo(() => {
-    return chartModel.slices.map(slice => slice.data.color);
-  }, [chartModel.slices]);
+    return getInnerRingSlices(chartModel).map(slice => slice.color);
+  }, [chartModel]);
 
   return useInjectSeriesColorsClasses(hexColors);
 };

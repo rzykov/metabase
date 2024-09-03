@@ -11,8 +11,8 @@ import type {
 
 import { DIMENSIONS, TOTAL_TEXT } from "./constants";
 import type { PieChartFormatters } from "./format";
-import type { PieChartModel, PieSlice } from "./model/types";
-import { getSliceTreeNodesFromPath } from "./util";
+import type { PieChartModel, SliceTreeNode } from "./model/types";
+import { getInnerRingSlices, getSliceTreeNodesFromPath } from "./util";
 
 function getTotalGraphicOption(
   settings: ComputedVisualizationSettings,
@@ -32,6 +32,7 @@ function getTotalGraphicOption(
   if (hasSufficientWidth && settings["pie.show_total"]) {
     let sliceValueOrTotal = 0;
 
+    // chart hovered
     if (hoveredSliceKeyPath != null) {
       const { sliceTreeNode } = getSliceTreeNodesFromPath(
         chartModel.sliceTree,
@@ -40,9 +41,13 @@ function getTotalGraphicOption(
 
       sliceValueOrTotal = checkNotNull(sliceTreeNode).value;
       labelText = checkNotNull(sliceTreeNode?.name);
+
+      // legend hovered
     } else if (hoveredIndex != null) {
-      sliceValueOrTotal = chartModel.slices[hoveredIndex].data.displayValue;
-      labelText = chartModel.slices[hoveredIndex].data.name.toUpperCase();
+      const slice = getInnerRingSlices(chartModel)[hoveredIndex];
+
+      sliceValueOrTotal = slice.displayValue;
+      labelText = slice.name.toUpperCase();
     } else {
       sliceValueOrTotal = chartModel.total;
       labelText = TOTAL_TEXT;
@@ -123,15 +128,15 @@ function getRadiusOption(
 }
 
 function getSliceLabel(
-  slice: PieSlice,
+  slice: SliceTreeNode,
   settings: ComputedVisualizationSettings,
   formatters: PieChartFormatters,
 ) {
-  const name = settings["pie.show_labels"] ? slice.data.name : undefined;
+  const name = settings["pie.show_labels"] ? slice.name : undefined;
   const percent =
     settings["pie.percent_visibility"] === "inside" ||
     settings["pie.percent_visibility"] === "both"
-      ? formatters.formatPercent(slice.data.normalizedPercentage, "chart")
+      ? formatters.formatPercent(slice.normalizedPercentage, "chart")
       : undefined;
 
   if (name != null && percent != null) {
@@ -148,7 +153,7 @@ function getSliceLabel(
 
 function getIsLabelVisible(
   label: string,
-  slice: PieSlice,
+  slice: SliceTreeNode,
   innerRadius: number,
   outerRadius: number,
   fontSize: number,
@@ -236,7 +241,7 @@ export function getPieChartOption(
 
   // Series data
   function getSeriesDataFromSlices(
-    slices: PieSlice[],
+    slices: SliceTreeNode[],
     ring = 1,
   ): SunburstSeriesOption["data"] {
     if (slices.length === 0) {
@@ -261,7 +266,7 @@ export function getPieChartOption(
 
     return slices.map(s => {
       const labelColor = getTextColorForBackground(
-        s.data.color,
+        s.color,
         renderingContext.getColor,
       );
       const label = getSliceLabel(s, settings, formatters);
@@ -277,10 +282,13 @@ export function getPieChartOption(
       );
 
       return {
-        children: getSeriesDataFromSlices(s.data.children, ring + 1),
-        value: s.data.value,
-        name: s.data.key,
-        itemStyle: { color: s.data.color, borderWidth: ringBorderWidth },
+        children: getSeriesDataFromSlices(
+          Array(...s.children.values()),
+          ring + 1,
+        ),
+        value: s.value,
+        name: s.key,
+        itemStyle: { color: s.color, borderWidth: ringBorderWidth },
         label: {
           color: labelColor,
           formatter: () => (isLabelVisible ? label : " "),
@@ -288,7 +296,7 @@ export function getPieChartOption(
         },
         emphasis: {
           itemStyle: {
-            color: s.data.color,
+            color: s.color,
             borderColor: renderingContext.theme.pie.borderColor,
           },
         },
@@ -299,7 +307,7 @@ export function getPieChartOption(
             // causing the underlying color to leak. It is safe to use non-hex
             // values here, since this value will never be used in batik
             // (there's no emphasis/blur for static viz).
-            color: Color(s.data.color).fade(0.7).rgb().string(),
+            color: Color(s.color).fade(0.7).rgb().string(),
             opacity: 1,
           },
           label: {
@@ -310,7 +318,7 @@ export function getPieChartOption(
       };
     });
   }
-  const data = getSeriesDataFromSlices(chartModel.slices);
+  const data = getSeriesDataFromSlices(getInnerRingSlices(chartModel));
 
   return {
     // Unlike the cartesian chart, `animationDuration: 0` does not prevent the

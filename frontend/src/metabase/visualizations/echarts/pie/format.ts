@@ -39,7 +39,10 @@ export function getPieChartFormatters(
     let decimals = settings["pie.decimal_places"];
     if (decimals == null) {
       decimals = computeMaxDecimalsForValues(
-        chartModel.slices.map(s => s.data.normalizedPercentage),
+        // TODO update this to include all values
+        Array(...chartModel.sliceTree.values()).map(
+          s => s.normalizedPercentage,
+        ),
         {
           style: "percent",
           maximumSignificantDigits: location === "legend" ? 3 : 2,
