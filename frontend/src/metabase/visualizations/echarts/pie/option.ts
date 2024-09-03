@@ -168,7 +168,7 @@ function getIsLabelVisible(
   // See the following document for a more detailed explanation:
   // https://www.notion.so/metabase/Pie-Chart-Label-Visibility-Explanation-4cf366a78c6a419d95763a431a36b175?pvs=4
   let arcAngle = slice.startAngle - slice.endAngle;
-  arcAngle = Math.min(Math.abs(arcAngle), Math.PI - 0.001); // TODO fix arcAngle for sub slices
+  arcAngle = Math.min(Math.abs(arcAngle), Math.PI - 0.001);
 
   const donutWidth = (outerRadius - innerRadius) / numRings;
   const ringInnerRadius = innerRadius + donutWidth * (ring - 1);

@@ -345,18 +345,36 @@ export function getPieChartModel(
   // We need start and end angles for the label formatter, to determine if we
   // should the percent label on the chart for a specific slice. To get these we
   // need to use d3.
-  // TODO recursively apply this to other rings
-  const d3Pie = pie<SliceTreeNode>()
-    .sort(null)
-    // 1 degree in radians
-    .padAngle((Math.PI / 180) * 1)
-    .value(s => s.value);
+  // TODO move this and other functions outside of body
+  function computeSliceAngles(
+    slices: SliceTreeNode[],
+    startAngle?: number,
+    endAngle?: number,
+  ) {
+    const d3Pie = pie<SliceTreeNode>()
+      .sort(null)
+      // 1 degree in radians
+      .padAngle((Math.PI / 180) * 1)
+      .startAngle(startAngle ?? 0)
+      .endAngle(endAngle ?? 2 * Math.PI)
+      .value(s => s.value);
 
-  const d3Slices = d3Pie(Array(...sliceTreeNodes.values()));
-  d3Slices.forEach((d3Slice, index) => {
-    sliceTreeNodes[index].startAngle = d3Slice.startAngle;
-    sliceTreeNodes[index].endAngle = d3Slice.endAngle;
-  });
+    const d3Slices = d3Pie(slices, { startAngle, endAngle });
+    d3Slices.forEach((d3Slice, index) => {
+      slices[index].startAngle = d3Slice.startAngle;
+      slices[index].endAngle = d3Slice.endAngle;
+    });
+
+    slices.forEach(
+      slice =>
+        computeSliceAngles(
+          Array(...slice.children.values()),
+          slice.startAngle,
+          slice.endAngle,
+        ), // TODO use common func for Array(...node.values())
+    );
+  }
+  computeSliceAngles(sliceTreeNodes);
 
   // We increase the size of small slices, otherwise they will not be visible
   // in echarts due to the border rendering over the tiny slice
@@ -385,7 +403,7 @@ export function getPieChartModel(
       noHover: true,
       includeInLegend: false,
       startAngle: 0,
-      endAngle: 1,
+      endAngle: 2 * Math.PI,
     });
   }
 
