@@ -199,7 +199,7 @@ export const QuestionActions = ({
     });
   }
 
-  if (isStandaloneQuestion && hasCollectionPermissions) {
+  if (hasCollectionPermissions) {
     extraButtons.push({
       title: t`Move`,
       icon: "move",
