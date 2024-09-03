@@ -93,7 +93,7 @@ export const QuestionActions = ({
 
   const isQuestion = question.type() === "question";
   const isDashboardQuestion =
-    isQuestion && typeof question.dashboardId() !== undefined;
+    isQuestion && typeof question.dashboardId() === "number";
   const isStandaloneQuestion =
     isQuestion && question.dashboardId() === undefined;
   const isModel = question.type() === "model";
