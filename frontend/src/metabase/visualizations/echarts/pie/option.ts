@@ -153,6 +153,8 @@ function getIsLabelVisible(
   outerRadius: number,
   fontSize: number,
   renderingContext: RenderingContext,
+  ring: number,
+  numRings: number,
 ) {
   // We use the law of cosines to determine the length of the chord with the
   // same endpoints as the arc. The label should be shorter than this chord, and
@@ -161,13 +163,15 @@ function getIsLabelVisible(
   // See the following document for a more detailed explanation:
   // https://www.notion.so/metabase/Pie-Chart-Label-Visibility-Explanation-4cf366a78c6a419d95763a431a36b175?pvs=4
   let arcAngle = slice.startAngle - slice.endAngle;
-  arcAngle = Math.min(Math.abs(arcAngle), Math.PI - 0.001);
+  arcAngle = Math.min(Math.abs(arcAngle), Math.PI - 0.001); // TODO fix arcAngle for sub slices
+
+  const donutWidth = (outerRadius - innerRadius) / numRings;
+  const ringInnerRadius = innerRadius + donutWidth * (ring - 1);
 
   const innerCircleChordLength = Math.sqrt(
-    2 * innerRadius * innerRadius -
-      2 * innerRadius * innerRadius * Math.cos(arcAngle),
+    2 * ringInnerRadius * ringInnerRadius -
+      2 * ringInnerRadius * ringInnerRadius * Math.cos(arcAngle),
   );
-  const donutWidth = outerRadius - innerRadius;
   const maxLabelDimension = Math.min(innerCircleChordLength, donutWidth);
 
   const fontStyle = {
@@ -178,9 +182,16 @@ function getIsLabelVisible(
   const labelWidth = renderingContext.measureText(label, fontStyle);
   const labelHeight = renderingContext.measureTextHeight(label, fontStyle);
 
+  if (ring === 1) {
+    return (
+      labelWidth + DIMENSIONS.slice.label.padding <= maxLabelDimension &&
+      labelHeight + DIMENSIONS.slice.label.padding <= maxLabelDimension
+    );
+  }
+
   return (
-    labelWidth + DIMENSIONS.slice.label.padding <= maxLabelDimension &&
-    labelHeight + DIMENSIONS.slice.label.padding <= maxLabelDimension
+    labelWidth + DIMENSIONS.slice.label.padding <= donutWidth &&
+    labelHeight + DIMENSIONS.slice.label.padding <= innerCircleChordLength
   );
 }
 
@@ -240,6 +251,14 @@ export function getPieChartOption(
       ringBorderWidth = DIMENSIONS.slice.threeRingBorderWidth;
     }
 
+    let numRings = 1;
+    if (settings["pie.middle_dimension"] != null) {
+      numRings = 2;
+    }
+    if (settings["pie.outer_dimension"] != null) {
+      numRings = 3;
+    }
+
     return slices.map(s => {
       const labelColor = getTextColorForBackground(
         s.data.color,
@@ -253,6 +272,8 @@ export function getPieChartOption(
         outerRadius,
         fontSize,
         renderingContext,
+        ring,
+        numRings,
       );
 
       return {
