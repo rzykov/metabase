@@ -48,6 +48,9 @@ export function getColorForRing(
   }
 
   const accentNumber = getAccentNumberFromHex(hexColor);
+  if (accentNumber == null) {
+    return hexColor;
+  }
 
   let suffix = "";
   if (ring === "inner") {
