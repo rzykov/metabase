@@ -237,7 +237,7 @@ export const QuestionActions = ({
 
   extraButtons.push(...PLUGIN_QUERY_BUILDER_HEADER.extraButtons(question));
 
-  if (!isDashboardQuestion && hasCollectionPermissions) {
+  if (hasCollectionPermissions) {
     extraButtons.push({
       title: t`Move to trash`,
       icon: "trash",
