@@ -1,7 +1,7 @@
 import { checkNotNull } from "metabase/lib/types";
 
-import type { PieChartModel, SliceTree, SliceTreeNode } from "./model/types";
-import type { EChartsSunburstSeriesMouseEvent } from "./types";
+import type { PieChartModel, SliceTree, SliceTreeNode } from "../model/types";
+import type { EChartsSunburstSeriesMouseEvent } from "../types";
 
 export const getSliceKeyPath = (event: EChartsSunburstSeriesMouseEvent) =>
   event.treePathInfo.slice(1).map(info => info.name);

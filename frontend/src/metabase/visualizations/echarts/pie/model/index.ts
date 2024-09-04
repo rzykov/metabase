@@ -18,6 +18,7 @@ import type { RawSeries } from "metabase-types/api";
 import type { ShowWarning } from "../../types";
 import { OTHER_SLICE_KEY, OTHER_SLICE_MIN_PERCENTAGE } from "../constants";
 import { getDimensionFormatter } from "../format";
+import { getColorForRing } from "../util/colors";
 
 import type {
   PieChartModel,
@@ -184,7 +185,7 @@ export function getPieChartModel(
       value,
       displayValue: value,
       normalizedPercentage: value / total, // slice percentage values are normalized to 0-1 scale
-      color,
+      color: getColorForRing(color, "inner", settings, renderingContext),
       children: new Map(),
       column: colDescs.dimensionDesc.column,
       rowIndex: checkNotNull(rowIndiciesByKey.get(key)),
@@ -263,7 +264,12 @@ export function getPieChartModel(
           value: metricValue,
           displayValue: metricValue,
           normalizedPercentage: metricValue / total,
-          color: dimensionNode.color, // TODO use light/dark color
+          color: getColorForRing(
+            dimensionNode.color,
+            "middle",
+            settings,
+            renderingContext,
+          ),
           column: colDescs.middleDimensionDesc.column,
           rowIndex: index,
           children: new Map(),
@@ -302,7 +308,12 @@ export function getPieChartModel(
           value: metricValue,
           displayValue: metricValue,
           normalizedPercentage: metricValue / total,
-          color: dimensionNode.color, // TODO use light/dark color
+          color: getColorForRing(
+            dimensionNode.color,
+            "outer",
+            settings,
+            renderingContext,
+          ),
           column: colDescs.outerDimensionDesc.column,
           rowIndex: index,
           children: new Map(),
