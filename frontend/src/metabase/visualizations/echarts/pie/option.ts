@@ -282,10 +282,9 @@ export function getPieChartOption(
       );
 
       return {
-        children: getSeriesDataFromSlices(
-          Array(...s.children.values()),
-          ring + 1,
-        ),
+        children: !s.isOther
+          ? getSeriesDataFromSlices(Array(...s.children.values()), ring + 1)
+          : undefined,
         value: s.value,
         name: s.key,
         itemStyle: { color: s.color, borderWidth: ringBorderWidth },
