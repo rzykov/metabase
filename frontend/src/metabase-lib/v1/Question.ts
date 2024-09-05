@@ -494,6 +494,10 @@ class Question {
     return this._card.dashboard_id;
   }
 
+  setDashboardId(dashboardId: DashboardId | null | undefined) {
+    return this.setCard(assoc(this.card(), "dashboard_id", dashboardId));
+  }
+
   id(): number {
     return this._card && this._card.id;
   }
