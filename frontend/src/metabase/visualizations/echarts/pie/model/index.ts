@@ -191,6 +191,7 @@ export function getPieChartModel(
       rowIndex: checkNotNull(rowIndiciesByKey.get(key)),
       legendHoverIndex: index,
       isOther,
+      includeInLegend: true,
       startAngle: 0, // placeholders
       endAngle: 0,
     }))
@@ -377,6 +378,7 @@ export function getPieChartModel(
       column: colDescs.dimensionDesc.column,
       children,
       legendHoverIndex: sliceTree.size,
+      includeInLegend: true,
       isOther: true,
       startAngle: 0,
       endAngle: 0,
