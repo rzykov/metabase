@@ -46,7 +46,11 @@ export const getTooltipModel = (
       ? Array(...nodes[nodes.length - 2].children.values())
       : getInnerRingSlices(chartModel);
 
-  const rows = siblingNodes.map(slice => ({
+  const rows = (
+    sliceTreeNode.isOther
+      ? Array(...sliceTreeNode.children.values())
+      : siblingNodes
+  ).map(slice => ({
     name: slice.name,
     value: slice.value,
     color: slice.color,

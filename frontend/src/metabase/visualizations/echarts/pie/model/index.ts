@@ -361,7 +361,10 @@ export function getPieChartModel(
   if (otherTotal > 0) {
     const children: SliceTree = new Map();
     others.forEach(node => {
-      children.set(String(node.key), node);
+      children.set(String(node.key), {
+        ...node,
+        color: "",
+      });
     });
 
     sliceTree.set(OTHER_SLICE_KEY, {
@@ -371,6 +374,7 @@ export function getPieChartModel(
       displayValue: otherTotal,
       normalizedPercentage: otherTotal / total,
       color: renderingContext.getColor("text-light"),
+      column: colDescs.dimensionDesc.column,
       children,
       legendHoverIndex: sliceTree.size,
       isOther: true,
@@ -387,7 +391,7 @@ export function getPieChartModel(
     if (others.length > 1 && otherTotal > 0) {
       const otherSliceChildren: SliceTree = new Map();
       others.forEach(o => {
-        otherSliceChildren.set(String(o.key), o);
+        otherSliceChildren.set(String(o.key), { ...o, color: "" });
         node.children.delete(String(o.key));
       });
 
@@ -466,6 +470,7 @@ export function getPieChartModel(
       displayValue: 0,
       normalizedPercentage: 0,
       color: renderingContext.getColor("text-light"),
+      column: colDescs.dimensionDesc.column,
       children: new Map(),
       legendHoverIndex: 0,
       isOther: true,
