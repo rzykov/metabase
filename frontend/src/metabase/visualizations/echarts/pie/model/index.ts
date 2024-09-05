@@ -240,8 +240,9 @@ export function getPieChartModel(
         row[colDescs.dimensionDesc.index],
       );
       const dimensionNode = sliceTree.get(String(dimensionKey));
-      if (dimensionNode == null) {
-        throw new Error(`Could not find dimensionNode for key ${dimensionKey}`);
+      const dimensionIsOther = dimensionNode == null;
+      if (dimensionIsOther) {
+        return;
       }
       const metricValue = getNumberOr(row[colDescs.metricDesc.index], 0);
 
@@ -256,6 +257,10 @@ export function getPieChartModel(
       if (middleDimensionNode == null) {
         // If there is no node for this middle dimension value in the tree
         // create it.
+        const normalizedPercentage = metricValue / total;
+        const isOther =
+          normalizedPercentage < (settings["pie.slice_threshold"] ?? 0) / 100;
+
         middleDimensionNode = {
           key: middleDimensionKey,
           name: formatMiddleDimensionValue(
@@ -263,7 +268,7 @@ export function getPieChartModel(
           ),
           value: metricValue,
           displayValue: metricValue,
-          normalizedPercentage: metricValue / total,
+          normalizedPercentage,
           color: getColorForRing(
             dimensionNode.color,
             "middle",
@@ -272,6 +277,7 @@ export function getPieChartModel(
           ),
           column: colDescs.middleDimensionDesc.column,
           rowIndex: index,
+          isOther,
           children: new Map(),
           startAngle: 0,
           endAngle: 0,
@@ -284,6 +290,12 @@ export function getPieChartModel(
         // If the node already exists, add the metric value from the current row
         // to it.
         middleDimensionNode.value += metricValue;
+        const normalizedPercentage = middleDimensionNode.value / total;
+        const isOther =
+          normalizedPercentage < (settings["pie.slice_threshold"] ?? 0) / 100;
+
+        middleDimensionNode.normalizedPercentage = normalizedPercentage;
+        middleDimensionNode.isOther = isOther;
       }
 
       if (colDescs.outerDimensionDesc == null) {
@@ -299,6 +311,10 @@ export function getPieChartModel(
       );
 
       if (outerDimensionNode == null) {
+        const normalizedPercentage = metricValue / total;
+        const isOther =
+          normalizedPercentage < (settings["pie.slice_threshold"] ?? 0) / 100;
+
         outerDimensionNode = {
           key: outerDimensionKey,
           name:
@@ -307,7 +323,7 @@ export function getPieChartModel(
             ) ?? "",
           value: metricValue,
           displayValue: metricValue,
-          normalizedPercentage: metricValue / total,
+          normalizedPercentage,
           color: getColorForRing(
             dimensionNode.color,
             "outer",
@@ -316,6 +332,7 @@ export function getPieChartModel(
           ),
           column: colDescs.outerDimensionDesc.column,
           rowIndex: index,
+          isOther,
           children: new Map(),
           startAngle: 0,
           endAngle: 0,
@@ -326,11 +343,20 @@ export function getPieChartModel(
         );
       } else {
         outerDimensionNode.value += metricValue;
+
+        outerDimensionNode.value += metricValue;
+        const normalizedPercentage = outerDimensionNode.value / total;
+        const isOther =
+          normalizedPercentage < (settings["pie.slice_threshold"] ?? 0) / 100;
+
+        outerDimensionNode.normalizedPercentage = normalizedPercentage;
+        outerDimensionNode.isOther = isOther;
       }
     });
   }
 
   // Only add "other" slice if there are slices below threshold with non-zero total
+  // TODO consider conslidating logic by adding a sentinel node to `sliceTree`
   const otherTotal = others.reduce((currTotal, o) => currTotal + o.value, 0);
   if (otherTotal > 0) {
     const children: SliceTree = new Map();
@@ -352,6 +378,50 @@ export function getPieChartModel(
       endAngle: 0,
     });
   }
+
+  function aggregateSlices(node: SliceTreeNode) {
+    const children = Array(...node.children.values());
+    const others = children.filter(s => s.isOther);
+    const otherTotal = others.reduce((currTotal, o) => currTotal + o.value, 0);
+
+    if (others.length > 1 && otherTotal > 0) {
+      const otherSliceChildren: SliceTree = new Map();
+      others.forEach(o => {
+        otherSliceChildren.set(String(o.key), o);
+        node.children.delete(String(o.key));
+      });
+
+      node.children.set(OTHER_SLICE_KEY, {
+        key: OTHER_SLICE_KEY,
+        name: OTHER_SLICE_KEY,
+        value: otherTotal,
+        displayValue: otherTotal,
+        normalizedPercentage: otherTotal / total,
+        color: renderingContext.getColor("text-light"),
+        children: otherSliceChildren,
+        isOther: true,
+        startAngle: 0,
+        endAngle: 0,
+      });
+    } else if (others.length === 1) {
+      others[0].isOther = false;
+    }
+
+    children.forEach(child => aggregateSlices(child));
+  }
+  sliceTreeNodes.forEach(node => aggregateSlices(node));
+
+  // We increase the size of small slices, otherwise they will not be visible
+  // in echarts due to the border rendering over the tiny slice
+  function resizeSmallSlices(slices: SliceTreeNode[]) {
+    slices.forEach(slice => {
+      if (slice.normalizedPercentage < OTHER_SLICE_MIN_PERCENTAGE) {
+        slice.value = total * OTHER_SLICE_MIN_PERCENTAGE;
+      }
+      resizeSmallSlices(Array(...slice.children.values()));
+    });
+  }
+  resizeSmallSlices(Array(...sliceTree.values()));
 
   // We need start and end angles for the label formatter, to determine if we
   // should the percent label on the chart for a specific slice. To get these we
@@ -386,18 +456,6 @@ export function getPieChartModel(
     );
   }
   computeSliceAngles(sliceTreeNodes);
-
-  // We increase the size of small slices, otherwise they will not be visible
-  // in echarts due to the border rendering over the tiny slice
-  function resizeSmallSlices(slices: SliceTreeNode[]) {
-    slices.forEach(slice => {
-      if (slice.normalizedPercentage < OTHER_SLICE_MIN_PERCENTAGE) {
-        slice.value = total * OTHER_SLICE_MIN_PERCENTAGE;
-      }
-      resizeSmallSlices(Array(...slice.children.values()));
-    });
-  }
-  resizeSmallSlices(Array(...sliceTree.values()));
 
   // If there are no non-zero slices, we'll display a single "other" slice
   if (sliceTree.size === 0) {
