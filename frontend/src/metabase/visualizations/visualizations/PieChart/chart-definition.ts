@@ -2,7 +2,6 @@ import { t } from "ttag";
 import _ from "underscore";
 
 import { formatValue } from "metabase/lib/formatting";
-import { ChartSettingOrderedSimple } from "metabase/visualizations/components/settings/ChartSettingOrderedSimple";
 import type { PieRow } from "metabase/visualizations/echarts/pie/model/types";
 import {
   ChartSettingsError,
@@ -35,6 +34,7 @@ import type {
 } from "metabase/visualizations/types";
 import type { RawSeries } from "metabase-types/api";
 
+import { DimensionsWidget } from "./DimensionsWidget";
 import { SliceNameWidget } from "./SliceNameWidget";
 
 export const PIE_CHART_DEFINITION: VisualizationDefinition = {
@@ -85,9 +85,14 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
     },
   ] as RawSeries,
   settings: {
+    ...metricSetting("pie.metric", {
+      section: t`Data`,
+      title: t`Measure`,
+      showColumnSetting: true,
+    }),
     ...columnSettings({ hidden: true }),
     ...dimensionSetting("pie.dimension", {
-      section: t`Data`,
+      hidden: true,
       title: t`Dimension`,
       showColumnSetting: true,
     }),
@@ -100,15 +105,14 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
       getDefault: () => undefined,
     },
     "pie.rows": {
-      section: t`Data`,
-      widget: ChartSettingOrderedSimple,
-      getHidden: (_rawSeries, settings) => settings["pie.dimension"] == null,
+      hidden: true,
       getValue: (rawSeries, settings) => {
         return getPieRows(rawSeries, settings, (value, options) =>
           String(formatValue(value, options)),
         );
       },
       getProps: (
+        // TODO remove/move this
         _rawSeries,
         vizSettings: ComputedVisualizationSettings,
         onChange,
@@ -150,6 +154,7 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
       hidden: true,
       getDefault: getDefaultSortRows,
     },
+    // TODO move this
     ...nestedSettings(SERIES_SETTING_KEY, {
       widget: SliceNameWidget,
       getHidden: (
@@ -191,11 +196,22 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
       },
       readDependencies: ["pie.rows"],
     } as any), // any type cast needed to avoid type error from confusion with destructured object params in `nestedSettings`
-    ...metricSetting("pie.metric", {
+
+    "pie._dimensions_widget": {
       section: t`Data`,
-      title: t`Measure`,
-      showColumnSetting: true,
-    }),
+      widget: DimensionsWidget,
+      getProps: (
+        rawSeries: RawSeries,
+        settings: ComputedVisualizationSettings,
+        _onChange: any,
+        _extra: any,
+        onChangeSettings: (newSettings: ComputedVisualizationSettings) => void,
+      ) => ({
+        rawSeries,
+        settings,
+        onChangeSettings,
+      }),
+    },
     "pie.show_legend": {
       section: t`Display`,
       title: t`Show legend`,
