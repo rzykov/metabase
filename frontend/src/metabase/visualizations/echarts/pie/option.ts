@@ -222,11 +222,14 @@ export function getPieChartOption(
   const borderWidth =
     (Math.PI * innerSideLength) / DIMENSIONS.slice.borderProportion; // arc length formula: s = 2πr(θ/360°), we want border to be 1 degree
 
-  const fontSize = 12; // TODO update this
-  //  Math.max(
-  //   DIMENSIONS.slice.maxFontSize * (innerSideLength / DIMENSIONS.maxSideLength),
-  //   DIMENSIONS.slice.minFontSize,
-  // );
+  const fontSize =
+    settings["pie.middle_dimension"] != null
+      ? DIMENSIONS.slice.multiRingFontSize
+      : Math.max(
+          DIMENSIONS.slice.maxFontSize *
+            (innerSideLength / DIMENSIONS.maxSideLength),
+          DIMENSIONS.slice.minFontSize,
+        );
 
   // "Show total" setting
   const graphicOption = getTotalGraphicOption(

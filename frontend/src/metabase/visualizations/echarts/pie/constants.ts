@@ -15,6 +15,7 @@ export const DIMENSIONS = {
     threeRingBorderWidth: 0.3,
     maxFontSize: 20,
     minFontSize: 14,
+    multiRingFontSize: 12,
     label: {
       fontWeight: 700,
       padding: 4,
