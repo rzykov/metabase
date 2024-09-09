@@ -1,6 +1,7 @@
 import type { ChangeEvent } from "react";
 import { useCallback, useRef, useState } from "react";
 import { t } from "ttag";
+import _ from "underscore";
 
 import { useSetting } from "metabase/common/hooks";
 import EntityMenu from "metabase/components/EntityMenu";
@@ -92,8 +93,7 @@ export const QuestionActions = ({
     : undefined;
 
   const isQuestion = question.type() === "question";
-  const isDashboardQuestion =
-    isQuestion && typeof question.dashboardId() === "number";
+  const isDashboardQuestion = isQuestion && _.isNumber(question.dashboardId());
   const isStandaloneQuestion =
     isQuestion && question.dashboardId() === undefined;
   const isModel = question.type() === "model";
