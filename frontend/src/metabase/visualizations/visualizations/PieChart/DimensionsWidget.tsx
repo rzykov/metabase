@@ -9,6 +9,7 @@ import { isDimension } from "metabase-lib/v1/types/utils/isa";
 import type { RawSeries } from "metabase-types/api";
 
 import Styles from "./DimensionsWidget.modules.css";
+import { PieRowsPicker } from "./PieRowsPicker";
 
 function DimensionPicker({
   title,
@@ -16,12 +17,14 @@ function DimensionPicker({
   options,
   onChange,
   onRemove,
+  showDragHandle,
 }: {
   title: string;
   value: string | undefined;
   options: { name: string; value: string }[];
   onChange: (value: string) => void;
   onRemove: (() => void) | undefined;
+  showDragHandle: boolean;
 }) {
   return (
     <>
@@ -42,7 +45,7 @@ function DimensionPicker({
         columns={undefined}
         onShowWidget={() => {}}
         onChangeSeriesColor={() => {}}
-        showDragHandle
+        showDragHandle={showDragHandle}
       />
     </>
   );
@@ -60,10 +63,12 @@ export function DimensionsWidget({
   rawSeries,
   settings,
   onChangeSettings,
+  onShowWidget,
 }: {
   rawSeries: RawSeries;
   settings: ComputedVisualizationSettings;
   onChangeSettings: (newSettings: ComputedVisualizationSettings) => void;
+  onShowWidget: (widget: any, ref: any) => void;
 }) {
   const [dimensions, setDimensions] = useState(() =>
     DIMENSION_SETTING_KEYS.map(settingsKey => settings[settingsKey]).filter(
@@ -117,16 +122,26 @@ export function DimensionsWidget({
         let options = dimensionOptions;
         optionsFilters.forEach(f => (options = options.filter(f)));
 
-        // TODO pie.rows component
         return (
-          <DimensionPicker
-            key={dimension}
-            title={DIMENSION_SETTING_TITLES[index]}
-            value={dimension}
-            onChange={onChangeDimension(index)}
-            onRemove={dimensions.length > 1 ? onRemove(index) : undefined}
-            options={options}
-          />
+          <>
+            <DimensionPicker
+              key={dimension}
+              title={DIMENSION_SETTING_TITLES[index]}
+              value={dimension}
+              onChange={onChangeDimension(index)}
+              onRemove={dimensions.length > 1 ? onRemove(index) : undefined}
+              options={options}
+              showDragHandle={dimensions.length > 1}
+            />
+            {index === 0 && (
+              <PieRowsPicker
+                rawSeries={rawSeries}
+                settings={settings}
+                onChangeSettings={onChangeSettings}
+                onShowWidget={onShowWidget}
+              />
+            )}
+          </>
         );
       })}
       {dimensions.length < 3 && dimensions[dimensions.length - 1] != null && (

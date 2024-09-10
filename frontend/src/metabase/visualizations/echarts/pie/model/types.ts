@@ -2,7 +2,7 @@ import type { ColumnDescriptor } from "metabase/visualizations/lib/graph/columns
 import type { RemappingHydratedDatasetColumn } from "metabase/visualizations/types";
 
 export interface PieRow {
-  key: string | number;
+  key: string;
   name: string;
   originalName: string;
   color: string;
