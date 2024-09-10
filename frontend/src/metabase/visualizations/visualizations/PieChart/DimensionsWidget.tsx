@@ -21,7 +21,7 @@ function DimensionPicker({
   value: string | undefined;
   options: { name: string; value: string }[];
   onChange: (value: string) => void;
-  onRemove: () => void;
+  onRemove: (() => void) | undefined;
 }) {
   return (
     <>
@@ -124,7 +124,7 @@ export function DimensionsWidget({
             title={DIMENSION_SETTING_TITLES[index]}
             value={dimension}
             onChange={onChangeDimension(index)}
-            onRemove={onRemove(index)}
+            onRemove={dimensions.length > 1 ? onRemove(index) : undefined}
             options={options}
           />
         );
