@@ -207,7 +207,8 @@ export function DimensionsWidget({
             {draggedDimensionIndex != null ? (
               <DimensionPicker
                 value={dimensions[draggedDimensionIndex]}
-                options={dimensionOptions}
+                options={getFilteredOptions(draggedDimensionIndex)}
+                onRemove={() => {}}
                 showDragHandle
               />
             ) : null}
