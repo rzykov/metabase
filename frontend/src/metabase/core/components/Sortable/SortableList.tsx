@@ -24,7 +24,7 @@ export type RenderItemProps<T> = {
   id: ItemId;
   isDragOverlay?: boolean;
 };
-type useSortableListProps<T> = {
+type SortableListProps<T> = {
   items: T[];
   getId: (item: T) => ItemId;
   renderItem: ({
@@ -37,6 +37,7 @@ type useSortableListProps<T> = {
   sensors?: SensorDescriptor<any>[];
   modifiers?: Modifier[];
   useDragOverlay?: boolean;
+  dragEnabled?: boolean;
 };
 
 export const SortableList = <T,>({
@@ -48,7 +49,8 @@ export const SortableList = <T,>({
   sensors = [],
   modifiers = [],
   useDragOverlay = true,
-}: useSortableListProps<T>) => {
+  dragEnabled = true,
+}: SortableListProps<T>) => {
   const [itemIds, setItemIds] = useState<ItemId[]>([]);
   const [indexedItems, setIndexedItems] = useState<Partial<Record<ItemId, T>>>(
     {},
@@ -105,6 +107,10 @@ export const SortableList = <T,>({
       setActiveItem(null);
     }
   };
+
+  if (!dragEnabled) {
+    return <>{sortableElements}</>;
+  }
 
   return (
     <DndContext

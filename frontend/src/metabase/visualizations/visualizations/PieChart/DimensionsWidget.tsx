@@ -187,12 +187,13 @@ export function DimensionsWidget({
                   />
                 </Sortable>
 
-                {index === 0 && showPieRows && (
+                {index === 0 && (
                   <PieRowsPicker
                     rawSeries={rawSeries}
                     settings={settings}
                     onChangeSettings={onChangeSettings}
                     onShowWidget={onShowWidget}
+                    canReorder={showPieRows}
                   />
                 )}
               </>
