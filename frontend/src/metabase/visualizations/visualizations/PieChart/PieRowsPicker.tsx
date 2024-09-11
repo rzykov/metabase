@@ -11,13 +11,11 @@ export function PieRowsPicker({
   settings,
   onChangeSettings,
   onShowWidget,
-  canReorder,
 }: {
   rawSeries: RawSeries;
   settings: ComputedVisualizationSettings;
   onChangeSettings: (newSettings: ComputedVisualizationSettings) => void;
   onShowWidget: (widget: any, ref: any) => void;
-  canReorder: boolean;
 }) {
   const pieRows = settings["pie.rows"];
   if (pieRows == null) {
@@ -49,7 +47,6 @@ export function PieRowsPicker({
       onChange={rows => onChangeSettings({ "pie.rows": rows as PieRow[] })}
       onShowWidget={onShowWidget}
       hasEditSettings
-      canReorder={canReorder}
     />
   );
 }

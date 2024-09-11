@@ -29,7 +29,6 @@ interface ChartSettingOrderedItemsProps<T extends SortableItem>
   items: T[];
   getId: (item: T) => string | number;
   removeIcon?: IconProps["name"];
-  canReorder?: boolean;
 }
 
 export function ChartSettingOrderedItems<T extends SortableItem>({
@@ -44,7 +43,6 @@ export function ChartSettingOrderedItems<T extends SortableItem>({
   onColorChange,
   getId,
   removeIcon,
-  canReorder = true,
 }: ChartSettingOrderedItemsProps<T>) {
   const isDragDisabled = items.length < 1;
   const pointerSensor = useSensor(PointerSensor, {
@@ -108,7 +106,6 @@ export function ChartSettingOrderedItems<T extends SortableItem>({
       items={items}
       onSortEnd={onSortEnd}
       sensors={[pointerSensor]}
-      dragEnabled={canReorder}
     />
   );
 }

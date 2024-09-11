@@ -199,7 +199,6 @@ export function DimensionsWidget({
                   settings={settings}
                   onChangeSettings={onChangeSettings}
                   onShowWidget={onShowWidget}
-                  canReorder={true} // TODO remove
                 />
               )}
             </>

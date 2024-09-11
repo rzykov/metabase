@@ -34,7 +34,6 @@ interface ChartSettingSeriesOrderProps {
   hasEditSettings: boolean;
   onChangeSeriesColor: (seriesKey: string, color: string) => void;
   onSortEnd: (newItems: SortableItem[]) => void;
-  canReorder?: boolean;
 }
 
 export const ChartSettingSeriesOrder = ({
@@ -44,7 +43,6 @@ export const ChartSettingSeriesOrder = ({
   hasEditSettings = true,
   onChangeSeriesColor,
   onSortEnd,
-  canReorder = true,
 }: ChartSettingSeriesOrderProps) => {
   const [isSeriesPickerVisible, setSeriesPickerVisible] = useState(false);
 
@@ -130,7 +128,6 @@ export const ChartSettingSeriesOrder = ({
             onColorChange={handleColorChange}
             getId={getId}
             removeIcon="close"
-            canReorder={canReorder}
           />
           {canAddSeries && !isSeriesPickerVisible && (
             <Button
