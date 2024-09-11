@@ -1,7 +1,13 @@
-import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  useSensor,
+} from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
   SortableContext,
+  arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useState } from "react";
@@ -119,11 +125,27 @@ export function DimensionsWidget({
   });
   const [showPieRows, setShowPieRows] = useState(true);
 
+  const onDragEnd = (event: DragEndEvent) => {
+    setShowPieRows(true);
+
+    const over = event.over;
+    if (over == null) {
+      return;
+    }
+    const sourceIndex = dimensions.findIndex(d => d === event.active.id);
+    const destIndex = dimensions.findIndex(d => d === over.id);
+
+    if (sourceIndex === -1 || destIndex === -1) {
+      return;
+    }
+    updateDimensions(arrayMove(dimensions, sourceIndex, destIndex));
+  };
+
   return (
     <>
       <DndContext
         onDragStart={() => setShowPieRows(false)}
-        onDragEnd={() => setShowPieRows(true)} // TODO
+        onDragEnd={onDragEnd}
         modifiers={[restrictToVerticalAxis]}
         sensors={[pointerSensor]}
       >
