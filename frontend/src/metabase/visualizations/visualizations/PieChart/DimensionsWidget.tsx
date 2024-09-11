@@ -1,6 +1,8 @@
 import {
   DndContext,
   type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
   PointerSensor,
   useSensor,
 } from "@dnd-kit/core";
@@ -27,15 +29,15 @@ import { PieRowsPicker } from "./PieRowsPicker";
 function DimensionPicker({
   value,
   options,
+  showDragHandle,
   onChange,
   onRemove,
-  showDragHandle,
 }: {
   value: string | undefined;
   options: { name: string; value: string }[];
-  onChange: (value: string) => void;
-  onRemove: (() => void) | undefined;
   showDragHandle: boolean;
+  onChange?: (value: string) => void;
+  onRemove?: (() => void) | undefined;
 }) {
   return (
     <ChartSettingFieldPicker
@@ -119,14 +121,32 @@ export function DimensionsWidget({
     (settingsKey: string) => (option: { name: string; value: string }) =>
       settings[settingsKey] == null || option.value !== settings[settingsKey];
 
+  const getFilteredOptions = (index: number) => {
+    const optionsFilters = DIMENSION_SETTING_KEYS.map(
+      (settingsKey, settingsKeyIndex) =>
+        settingsKeyIndex !== index ? getOptionsFilter(settingsKey) : null,
+    ).filter(f => f != null);
+
+    let options = dimensionOptions;
+    optionsFilters.forEach(f => (options = options.filter(f)));
+
+    return options;
+  };
+
   // Drag and drop
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: { distance: 15 },
   });
-  const [showPieRows, setShowPieRows] = useState(true);
+  const [draggedDimensionIndex, setDraggedDimensionIndex] = useState<number>();
+
+  const onDragStart = (event: DragStartEvent) => {
+    setDraggedDimensionIndex(
+      dimensions.findIndex(d => d === String(event.active.id)),
+    );
+  };
 
   const onDragEnd = (event: DragEndEvent) => {
-    setShowPieRows(true);
+    setDraggedDimensionIndex(undefined);
 
     const over = event.over;
     if (over == null) {
@@ -144,7 +164,7 @@ export function DimensionsWidget({
   return (
     <>
       <DndContext
-        onDragStart={() => setShowPieRows(false)}
+        onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         modifiers={[restrictToVerticalAxis]}
         sensors={[pointerSensor]}
@@ -153,52 +173,46 @@ export function DimensionsWidget({
           items={dimensions.filter(d => d != null).map(d => ({ id: d }))}
           strategy={verticalListSortingStrategy}
         >
-          {dimensions.map((dimension, index) => {
-            const optionsFilters = DIMENSION_SETTING_KEYS.map(
-              (settingsKey, settingsKeyIndex) =>
-                settingsKeyIndex !== index
-                  ? getOptionsFilter(settingsKey)
-                  : null,
-            ).filter(f => f != null);
-
-            let options = dimensionOptions;
-            optionsFilters.forEach(f => (options = options.filter(f)));
-
-            return (
-              <>
-                <Text weight="bold" mb="sm">
-                  {DIMENSION_SETTING_TITLES[index]}
-                </Text>
-                <Sortable
-                  key={String(dimension)}
-                  id={String(dimension)}
-                  disabled={dimension == null}
-                  draggingStyle={{ opacity: 0.5 }}
-                >
-                  <DimensionPicker
-                    key={dimension}
-                    value={dimension}
-                    onChange={onChangeDimension(index)}
-                    onRemove={
-                      dimensions.length > 1 ? onRemove(index) : undefined
-                    }
-                    options={options}
-                    showDragHandle={dimensions.length > 1 && dimension != null}
-                  />
-                </Sortable>
-
-                {index === 0 && (
-                  <PieRowsPicker
-                    rawSeries={rawSeries}
-                    settings={settings}
-                    onChangeSettings={onChangeSettings}
-                    onShowWidget={onShowWidget}
-                    canReorder={showPieRows}
-                  />
-                )}
-              </>
-            );
-          })}
+          {dimensions.map((dimension, index) => (
+            <>
+              <Text weight="bold" mb="sm">
+                {DIMENSION_SETTING_TITLES[index]}
+              </Text>
+              <Sortable
+                key={String(dimension)}
+                id={String(dimension)}
+                disabled={dimension == null}
+                draggingStyle={{ opacity: 0.5 }}
+              >
+                <DimensionPicker
+                  key={dimension}
+                  value={dimension}
+                  onChange={onChangeDimension(index)}
+                  onRemove={dimensions.length > 1 ? onRemove(index) : undefined}
+                  options={getFilteredOptions(index)}
+                  showDragHandle={dimensions.length > 1 && dimension != null}
+                />
+              </Sortable>
+              {index === 0 && (
+                <PieRowsPicker
+                  rawSeries={rawSeries}
+                  settings={settings}
+                  onChangeSettings={onChangeSettings}
+                  onShowWidget={onShowWidget}
+                  canReorder={true} // TODO remove
+                />
+              )}
+            </>
+          ))}
+          <DragOverlay>
+            {draggedDimensionIndex != null ? (
+              <DimensionPicker
+                value={dimensions[draggedDimensionIndex]}
+                options={dimensionOptions}
+                showDragHandle
+              />
+            ) : null}
+          </DragOverlay>
         </SortableContext>
       </DndContext>
       {dimensions.length < 3 && dimensions[dimensions.length - 1] != null && (
