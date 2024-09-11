@@ -1,7 +1,14 @@
+import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { useState } from "react";
 import { t } from "ttag";
 
-import { Box, Button, Text } from "metabase/ui";
+import { Sortable } from "metabase/core/components/Sortable";
+import { Button, Text } from "metabase/ui";
 import ChartSettingFieldPicker from "metabase/visualizations/components/settings/ChartSettingFieldPicker";
 import { getOptionFromColumn } from "metabase/visualizations/lib/settings/utils";
 import type { ComputedVisualizationSettings } from "metabase/visualizations/types";
@@ -12,14 +19,12 @@ import Styles from "./DimensionsWidget.modules.css";
 import { PieRowsPicker } from "./PieRowsPicker";
 
 function DimensionPicker({
-  title,
   value,
   options,
   onChange,
   onRemove,
   showDragHandle,
 }: {
-  title: string;
   value: string | undefined;
   options: { name: string; value: string }[];
   onChange: (value: string) => void;
@@ -27,27 +32,22 @@ function DimensionPicker({
   showDragHandle: boolean;
 }) {
   return (
-    <>
-      <Text weight="bold" mb="sm">
-        {title}
-      </Text>
-      <ChartSettingFieldPicker
-        value={value}
-        options={options}
-        columnHasSettings={() => false}
-        onChange={onChange}
-        onRemove={onRemove}
-        showColorPicker={false}
-        showColumnSetting={false}
-        className={Styles.dimensionPicker}
-        colors={undefined}
-        series={undefined}
-        columns={undefined}
-        onShowWidget={() => {}}
-        onChangeSeriesColor={() => {}}
-        showDragHandle={showDragHandle}
-      />
-    </>
+    <ChartSettingFieldPicker
+      value={value}
+      options={options}
+      columnHasSettings={() => false}
+      onChange={onChange}
+      onRemove={onRemove}
+      showColorPicker={false}
+      showColumnSetting={false}
+      className={Styles.dimensionPicker}
+      colors={undefined}
+      series={undefined}
+      columns={undefined}
+      onShowWidget={() => {}}
+      onChangeSeriesColor={() => {}}
+      showDragHandle={showDragHandle}
+    />
   );
 }
 
@@ -70,13 +70,14 @@ export function DimensionsWidget({
   onChangeSettings: (newSettings: ComputedVisualizationSettings) => void;
   onShowWidget: (widget: any, ref: any) => void;
 }) {
-  const [dimensions, setDimensions] = useState(() =>
+  // Dimension settings
+  const [dimensions, setDimensions] = useState<(string | undefined)[]>(() =>
     DIMENSION_SETTING_KEYS.map(settingsKey => settings[settingsKey]).filter(
       value => value != null,
     ),
   );
 
-  const updateDimensions = (newDimensions: string[]) => {
+  const updateDimensions = (newDimensions: (string | undefined)[]) => {
     setDimensions(newDimensions);
 
     const newSettings: Record<string, string | undefined> = {};
@@ -103,6 +104,7 @@ export function DimensionsWidget({
     updateDimensions(newDimensions);
   };
 
+  // Dropdown options
   const dimensionOptions = rawSeries[0].data.cols
     .filter(isDimension)
     .map(getOptionFromColumn);
@@ -111,45 +113,77 @@ export function DimensionsWidget({
     (settingsKey: string) => (option: { name: string; value: string }) =>
       settings[settingsKey] == null || option.value !== settings[settingsKey];
 
+  // Drag and drop
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: { distance: 15 },
+  });
+  const [showPieRows, setShowPieRows] = useState(true);
+
   return (
-    <Box>
-      {dimensions.map((dimension, index) => {
-        const optionsFilters = DIMENSION_SETTING_KEYS.map(
-          (settingsKey, settingsKeyIndex) =>
-            settingsKeyIndex !== index ? getOptionsFilter(settingsKey) : null,
-        ).filter(f => f != null);
+    <>
+      <DndContext
+        onDragStart={() => setShowPieRows(false)}
+        onDragEnd={() => setShowPieRows(true)} // TODO
+        modifiers={[restrictToVerticalAxis]}
+        sensors={[pointerSensor]}
+      >
+        <SortableContext
+          items={dimensions.filter(d => d != null).map(d => ({ id: d }))}
+          strategy={verticalListSortingStrategy}
+        >
+          {dimensions.map((dimension, index) => {
+            const optionsFilters = DIMENSION_SETTING_KEYS.map(
+              (settingsKey, settingsKeyIndex) =>
+                settingsKeyIndex !== index
+                  ? getOptionsFilter(settingsKey)
+                  : null,
+            ).filter(f => f != null);
 
-        let options = dimensionOptions;
-        optionsFilters.forEach(f => (options = options.filter(f)));
+            let options = dimensionOptions;
+            optionsFilters.forEach(f => (options = options.filter(f)));
 
-        return (
-          <>
-            <DimensionPicker
-              key={dimension}
-              title={DIMENSION_SETTING_TITLES[index]}
-              value={dimension}
-              onChange={onChangeDimension(index)}
-              onRemove={dimensions.length > 1 ? onRemove(index) : undefined}
-              options={options}
-              showDragHandle={dimensions.length > 1}
-            />
-            {index === 0 && (
-              <PieRowsPicker
-                rawSeries={rawSeries}
-                settings={settings}
-                onChangeSettings={onChangeSettings}
-                onShowWidget={onShowWidget}
-              />
-            )}
-          </>
-        );
-      })}
+            return (
+              <>
+                <Text weight="bold" mb="sm">
+                  {DIMENSION_SETTING_TITLES[index]}
+                </Text>
+                <Sortable
+                  key={String(dimension)}
+                  id={String(dimension)}
+                  disabled={dimension == null}
+                  draggingStyle={{ opacity: 0.5 }}
+                >
+                  <DimensionPicker
+                    key={dimension}
+                    value={dimension}
+                    onChange={onChangeDimension(index)}
+                    onRemove={
+                      dimensions.length > 1 ? onRemove(index) : undefined
+                    }
+                    options={options}
+                    showDragHandle={dimensions.length > 1 && dimension != null}
+                  />
+                </Sortable>
+
+                {index === 0 && showPieRows && (
+                  <PieRowsPicker
+                    rawSeries={rawSeries}
+                    settings={settings}
+                    onChangeSettings={onChangeSettings}
+                    onShowWidget={onShowWidget}
+                  />
+                )}
+              </>
+            );
+          })}
+        </SortableContext>
+      </DndContext>
       {dimensions.length < 3 && dimensions[dimensions.length - 1] != null && (
         <Button
           variant="subtle"
           onClick={() => setDimensions([...dimensions, undefined])}
         >{t`Add Ring`}</Button>
       )}
-    </Box>
+    </>
   );
 }
