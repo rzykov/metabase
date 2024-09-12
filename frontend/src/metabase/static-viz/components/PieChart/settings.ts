@@ -3,13 +3,12 @@ import {
   fillWithDefaultValue,
   getCommonStaticVizSettings,
 } from "metabase/static-viz/lib/settings";
-import {
-  columnsAreValid,
-  getDefaultDimensionAndMetric,
-} from "metabase/visualizations/lib/utils";
+import { columnsAreValid } from "metabase/visualizations/lib/utils";
 import {
   getColors,
   getDefaultPercentVisibility,
+  getDefaultPieColumns,
+  getDefaultShowLabels,
   getDefaultShowLegend,
   getDefaultShowTotal,
   getDefaultSliceThreshold,
@@ -24,25 +23,35 @@ export function computeStaticPieChartSettings(
   dashcardSettings: VisualizationSettings,
 ): ComputedVisualizationSettings {
   const settings = getCommonStaticVizSettings(rawSeries, dashcardSettings);
-  const { dimension: defaultDimension, metric: defaultMetric } =
-    getDefaultDimensionAndMetric(rawSeries);
-
-  const dimensionIsValid = columnsAreValid(
-    settings["pie.dimension"],
-    rawSeries[0].data,
-  );
-  const metricIsValid = columnsAreValid(
-    settings["pie.metric"],
-    rawSeries[0].data,
-  );
+  const defaultColumns = getDefaultPieColumns(rawSeries);
 
   fillWithDefaultValue(
     settings,
     "pie.dimension",
-    defaultDimension,
-    dimensionIsValid,
+    defaultColumns.dimension,
+    columnsAreValid(settings["pie.dimension"], rawSeries[0].data),
   );
-  fillWithDefaultValue(settings, "pie.metric", defaultMetric, metricIsValid);
+
+  fillWithDefaultValue(
+    settings,
+    "pie.middle_dimension",
+    defaultColumns.middleDimension,
+    columnsAreValid(settings["pie.middle_dimension"], rawSeries[0].data),
+  );
+
+  fillWithDefaultValue(
+    settings,
+    "pie.outer_dimension",
+    defaultColumns.outerDimension,
+    columnsAreValid(settings["pie.outer_dimension"], rawSeries[0].data),
+  );
+
+  fillWithDefaultValue(
+    settings,
+    "pie.metric",
+    defaultColumns.metric,
+    columnsAreValid(settings["pie.metric"], rawSeries[0].data),
+  );
 
   fillWithDefaultValue(settings, "pie.sort_rows", getDefaultSortRows);
 
@@ -60,6 +69,11 @@ export function computeStaticPieChartSettings(
 
   fillWithDefaultValue(settings, "pie.show_legend", getDefaultShowLegend());
   fillWithDefaultValue(settings, "pie.show_total", getDefaultShowTotal());
+  fillWithDefaultValue(
+    settings,
+    "pie.show_labels",
+    getDefaultShowLabels(settings),
+  );
   fillWithDefaultValue(
     settings,
     "pie.percent_visibility",

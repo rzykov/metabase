@@ -2,7 +2,6 @@ import { t } from "ttag";
 import _ from "underscore";
 
 import { formatValue } from "metabase/lib/formatting";
-import type { PieRow } from "metabase/visualizations/echarts/pie/model/types";
 import {
   ChartSettingsError,
   MinRowsError,
@@ -15,6 +14,7 @@ import {
 } from "metabase/visualizations/lib/settings/utils";
 import {
   getDefaultPercentVisibility,
+  getDefaultPieColumns,
   getDefaultShowLabels,
   getDefaultShowLegend,
   getDefaultShowTotal,
@@ -32,7 +32,7 @@ import type {
   VisualizationDefinition,
   VisualizationSettingsDefinitions,
 } from "metabase/visualizations/types";
-import type { RawSeries } from "metabase-types/api";
+import type { RawSeries, Series } from "metabase-types/api";
 
 import { DimensionsWidget } from "./DimensionsWidget";
 import { SliceNameWidget } from "./SliceNameWidget";
@@ -89,20 +89,23 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
       section: t`Data`,
       title: t`Measure`,
       showColumnSetting: true,
+      getDefault: (rawSeries: Series) => getDefaultPieColumns(rawSeries).metric,
     }),
     ...columnSettings({ hidden: true }),
     ...dimensionSetting("pie.dimension", {
       hidden: true,
       title: t`Dimension`,
       showColumnSetting: true,
+      getDefault: (rawSeries: Series) =>
+        getDefaultPieColumns(rawSeries).dimension,
     }),
     "pie.middle_dimension": {
       hidden: true,
-      getDefault: () => undefined,
+      getDefault: rawSeries => getDefaultPieColumns(rawSeries).middleDimension,
     },
     "pie.outer_dimension": {
       hidden: true,
-      getDefault: () => undefined,
+      getDefault: rawSeries => getDefaultPieColumns(rawSeries).outerDimension,
     },
     "pie.rows": {
       hidden: true,
@@ -110,37 +113,6 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
         return getPieRows(rawSeries, settings, (value, options) =>
           String(formatValue(value, options)),
         );
-      },
-      getProps: (
-        // TODO remove/move this
-        _rawSeries,
-        vizSettings: ComputedVisualizationSettings,
-        onChange,
-        _extra,
-        onChangeSettings,
-      ) => {
-        return {
-          onChangeSeriesColor: (sliceKey: string, color: string) => {
-            const pieRows = vizSettings["pie.rows"];
-            if (pieRows == null) {
-              throw Error("Missing `pie.rows` setting");
-            }
-
-            onChange(
-              pieRows.map(row => {
-                if (row.key !== sliceKey) {
-                  return row;
-                }
-                return { ...row, color, defaultColor: false };
-              }),
-            );
-          },
-          onSortEnd: (newPieRows: PieRow[]) =>
-            onChangeSettings({
-              "pie.sort_rows": false,
-              "pie.rows": newPieRows,
-            }),
-        };
       },
       readDependencies: [
         "pie.dimension",
@@ -154,7 +126,6 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
       hidden: true,
       getDefault: getDefaultSortRows,
     },
-    // TODO move this
     ...nestedSettings(SERIES_SETTING_KEY, {
       widget: SliceNameWidget,
       getHidden: (
@@ -211,6 +182,12 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
         settings,
         onChangeSettings,
       }),
+      readDependencies: [
+        "pie.dimension",
+        "pie.middle_dimension",
+        "pie.outer_dimension",
+        "pie.rows",
+      ],
     },
     "pie.show_legend": {
       section: t`Display`,

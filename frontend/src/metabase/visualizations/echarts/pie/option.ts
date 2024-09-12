@@ -114,9 +114,11 @@ function getRadiusOption(
 ) {
   let innerRadiusRatio = DIMENSIONS.slice.innerRadiusRatio;
   if (settings["pie.middle_dimension"] != null) {
+    // TODO update this
     innerRadiusRatio = DIMENSIONS.slice.twoRingInnerRadiusRatio;
 
     if (settings["pie.outer_dimension"] != null) {
+      // TODO update this
       innerRadiusRatio = DIMENSIONS.slice.threeRingInnerRadiusRatio;
     }
   }
@@ -223,7 +225,7 @@ export function getPieChartOption(
     (Math.PI * innerSideLength) / DIMENSIONS.slice.borderProportion; // arc length formula: s = 2πr(θ/360°), we want border to be 1 degree
 
   const fontSize =
-    settings["pie.middle_dimension"] != null
+    settings["pie.middle_dimension"] != null // TODO update this
       ? DIMENSIONS.slice.multiRingFontSize
       : Math.max(
           DIMENSIONS.slice.maxFontSize *
@@ -261,9 +263,11 @@ export function getPieChartOption(
 
     let numRings = 1;
     if (settings["pie.middle_dimension"] != null) {
+      // TODO update this
       numRings = 2;
     }
     if (settings["pie.outer_dimension"] != null) {
+      // TODO update this
       numRings = 3;
     }
 

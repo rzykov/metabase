@@ -9,6 +9,7 @@ import { getDimensionFormatter } from "metabase/visualizations/echarts/pie/forma
 import type { PieRow } from "metabase/visualizations/echarts/pie/model/types";
 import type { ShowWarning } from "metabase/visualizations/echarts/types";
 import { getNumberOr } from "metabase/visualizations/lib/settings/row-values";
+import { getDefaultDimensionsAndMetrics } from "metabase/visualizations/lib/utils";
 import { unaggregatedDataWarningPie } from "metabase/visualizations/lib/warnings";
 import type {
   ComputedVisualizationSettings,
@@ -21,12 +22,31 @@ import type {
   RowValues,
 } from "metabase-types/api";
 
+export function getDefaultPieColumns(rawSeries: RawSeries) {
+  const { dimensions, metrics } = getDefaultDimensionsAndMetrics(
+    rawSeries,
+    3,
+    1,
+  );
+  // TODO
+  // Make sure a dimension isn't already being used, e.g.
+  // don't assign dimensions[1] to outerDimension if the user set it to
+  // middleDimension
+  return {
+    dimension: dimensions[0],
+    middleDimension: dimensions[1],
+    outerDimension: dimensions[2],
+    metric: metrics[0],
+  };
+}
+
 export const getDefaultShowLegend = () => true;
 
 export const getDefaultShowTotal = () => true;
 
 export function getDefaultShowLabels(settings: ComputedVisualizationSettings) {
   if (settings["pie.middle_dimension"] == null) {
+    // TODO update this
     return false;
   }
   return true;

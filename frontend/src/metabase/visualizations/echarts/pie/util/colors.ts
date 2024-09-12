@@ -44,6 +44,7 @@ export function getColorForRing(
   renderingContext: RenderingContext,
 ) {
   if (settings["pie.middle_dimension"] == null) {
+    // TODO update this
     return hexColor;
   }
 
