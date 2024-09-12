@@ -127,7 +127,7 @@ export const PaletteResultItem = ({ item, active }: PaletteResultItemProps) => {
         onClick={e => {
           // We provide a link to enable right clicking and middle clicking.
           // The opening of the link on left click is already handled by the
-          // 'perform' callback, so we prevent it here.
+          // 'perform' callback, so we prevent the default behavior here.
           e.preventDefault();
         }}
       >
