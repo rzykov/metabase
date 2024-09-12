@@ -19,6 +19,7 @@ import { Sortable } from "metabase/core/components/Sortable";
 import { Button, Text } from "metabase/ui";
 import ChartSettingFieldPicker from "metabase/visualizations/components/settings/ChartSettingFieldPicker";
 import { getOptionFromColumn } from "metabase/visualizations/lib/settings/utils";
+import { getPieDimensions } from "metabase/visualizations/shared/settings/pie";
 import type { ComputedVisualizationSettings } from "metabase/visualizations/types";
 import { isDimension } from "metabase-lib/v1/types/utils/isa";
 import type { RawSeries } from "metabase-types/api";
@@ -59,12 +60,6 @@ function DimensionPicker({
   );
 }
 
-const DIMENSION_SETTING_KEYS = [
-  "pie.dimension",
-  "pie.middle_dimension",
-  "pie.outer_dimension",
-];
-
 const DIMENSION_SETTING_TITLES = [t`Inner Ring`, t`Middle Ring`, t`Outer Ring`];
 
 export function DimensionsWidget({
@@ -79,23 +74,13 @@ export function DimensionsWidget({
   onShowWidget: (widget: any, ref: any) => void;
 }) {
   // Dimension settings
-  const [dimensions, setDimensions] = useState<(string | undefined)[]>(() =>
-    DIMENSION_SETTING_KEYS.map(settingsKey => settings[settingsKey]).filter(
-      value => value != null,
-    ),
-  );
+  const [dimensions, setDimensions] = useState<(string | undefined)[]>(() => [
+    ...getPieDimensions(settings),
+  ]);
 
   const updateDimensions = (newDimensions: (string | undefined)[]) => {
     setDimensions(newDimensions);
-
-    const newSettings: Record<string, string | undefined> = {};
-
-    DIMENSION_SETTING_KEYS.forEach(
-      (settingsKey, index) =>
-        (newSettings[settingsKey] =
-          index < newDimensions.length ? newDimensions[index] : undefined),
-    );
-    onChangeSettings(newSettings);
+    onChangeSettings({ "pie.dimension": newDimensions.filter(d => d != null) });
   };
 
   const onChangeDimension = (index: number) => (newValue: string) => {
@@ -117,21 +102,10 @@ export function DimensionsWidget({
     .filter(isDimension)
     .map(getOptionFromColumn);
 
-  const getOptionsFilter =
-    (settingsKey: string) => (option: { name: string; value: string }) =>
-      settings[settingsKey] == null || option.value !== settings[settingsKey];
-
-  const getFilteredOptions = (index: number) => {
-    const optionsFilters = DIMENSION_SETTING_KEYS.map(
-      (settingsKey, settingsKeyIndex) =>
-        settingsKeyIndex !== index ? getOptionsFilter(settingsKey) : null,
-    ).filter(f => f != null);
-
-    let options = dimensionOptions;
-    optionsFilters.forEach(f => (options = options.filter(f)));
-
-    return options;
-  };
+  const getFilteredOptions = (index: number) =>
+    dimensionOptions.filter(
+      opt => opt.value === dimensions[index] || !dimensions.includes(opt.value),
+    );
 
   // Drag and drop
   const pointerSensor = useSensor(PointerSensor, {
