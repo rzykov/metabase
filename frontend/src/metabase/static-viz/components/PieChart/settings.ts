@@ -24,26 +24,11 @@ export function computeStaticPieChartSettings(
 ): ComputedVisualizationSettings {
   const settings = getCommonStaticVizSettings(rawSeries, dashcardSettings);
   const defaultColumns = getDefaultPieColumns(rawSeries);
-
   fillWithDefaultValue(
     settings,
     "pie.dimension",
     defaultColumns.dimension,
     columnsAreValid(settings["pie.dimension"], rawSeries[0].data),
-  );
-
-  fillWithDefaultValue(
-    settings,
-    "pie.middle_dimension",
-    defaultColumns.middleDimension,
-    columnsAreValid(settings["pie.middle_dimension"], rawSeries[0].data),
-  );
-
-  fillWithDefaultValue(
-    settings,
-    "pie.outer_dimension",
-    defaultColumns.outerDimension,
-    columnsAreValid(settings["pie.outer_dimension"], rawSeries[0].data),
   );
 
   fillWithDefaultValue(

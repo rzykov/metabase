@@ -208,7 +208,7 @@ export type VisualizationSettings = {
   "scalar.compact_primary_number"?: boolean;
 
   // Pie Settings
-  "pie.dimension"?: string;
+  "pie.dimension"?: string | string[];
   "pie.middle_dimension"?: string;
   "pie.outer_dimension"?: string;
   "pie.rows"?: PieRow[];

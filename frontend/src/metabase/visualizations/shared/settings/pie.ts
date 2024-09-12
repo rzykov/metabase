@@ -22,20 +22,26 @@ import type {
   RowValues,
 } from "metabase-types/api";
 
+export function getPieDimensions(settings: ComputedVisualizationSettings) {
+  const dimensionSetting = settings["pie.dimension"];
+
+  if (dimensionSetting == null) {
+    throw new Error("`pie.dimension` is undefined");
+  }
+  if (Array.isArray(dimensionSetting)) {
+    return dimensionSetting;
+  }
+  return [dimensionSetting];
+}
+
 export function getDefaultPieColumns(rawSeries: RawSeries) {
   const { dimensions, metrics } = getDefaultDimensionsAndMetrics(
     rawSeries,
     3,
     1,
   );
-  // TODO
-  // Make sure a dimension isn't already being used, e.g.
-  // don't assign dimensions[1] to outerDimension if the user set it to
-  // middleDimension
   return {
-    dimension: dimensions[0],
-    middleDimension: dimensions[1],
-    outerDimension: dimensions[2],
+    dimension: dimensions,
     metric: metrics[0],
   };
 }
@@ -45,8 +51,7 @@ export const getDefaultShowLegend = () => true;
 export const getDefaultShowTotal = () => true;
 
 export function getDefaultShowLabels(settings: ComputedVisualizationSettings) {
-  if (settings["pie.middle_dimension"] == null) {
-    // TODO update this
+  if (getPieDimensions(settings).length <= 1) {
     return false;
   }
   return true;
@@ -144,10 +149,9 @@ export function getColors(
       data: { rows, cols },
     },
   ] = rawSeries;
+  const dimensionName = getPieDimensions(currentSettings)[0];
 
-  const dimensionIndex = cols.findIndex(
-    col => col.name === currentSettings["pie.dimension"],
-  );
+  const dimensionIndex = cols.findIndex(col => col.name === dimensionName);
   const metricIndex = cols.findIndex(
     col => col.name === currentSettings["pie.metric"],
   );
@@ -179,11 +183,12 @@ export function getPieRows(
       data: { cols, rows: dataRows },
     },
   ] = rawSeries;
+  const dimensionName = getPieDimensions(settings)[0];
 
-  const dimensionCol = cols.find(c => c.name === settings["pie.dimension"]);
+  const dimensionCol = cols.find(c => c.name === dimensionName);
   if (dimensionCol == null) {
     throw Error(
-      `Could not find column based on "pie.dimension setting with value ${settings["pie.dimension"]}`,
+      `Could not find column based on "pie.dimension" setting with value ${dimensionName}`,
     );
   }
 
@@ -193,9 +198,7 @@ export function getPieRows(
     formatter,
   );
 
-  const dimensionIndex = cols.findIndex(
-    col => col.name === settings["pie.dimension"],
-  );
+  const dimensionIndex = cols.findIndex(col => col.name === dimensionName);
   const metricIndex = cols.findIndex(
     col => col.name === settings["pie.metric"],
   );

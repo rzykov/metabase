@@ -8,6 +8,7 @@ import { pieNegativesWarning } from "metabase/visualizations/lib/warnings";
 import {
   getAggregatedRows,
   getKeyFromDimensionValue,
+  getPieDimensions,
 } from "metabase/visualizations/shared/settings/pie";
 import type {
   ComputedVisualizationSettings,
@@ -37,11 +38,10 @@ function getColDescs(
     },
   ] = rawSeries;
 
-  const dimension = findWithIndex(
-    cols,
-    c => c.name === settings["pie.dimension"],
-  );
   const metric = findWithIndex(cols, c => c.name === settings["pie.metric"]);
+
+  const dimensionColNames = getPieDimensions(settings);
+  const dimension = findWithIndex(cols, c => c.name === dimensionColNames[0]);
 
   if (!dimension.item || !metric.item) {
     throw new Error(
@@ -60,14 +60,14 @@ function getColDescs(
     },
   };
 
-  if (settings["pie.middle_dimension"] != null) {
+  if (dimensionColNames.length > 1) {
     const middleDimension = findWithIndex(
       cols,
-      c => c.name === settings["pie.middle_dimension"],
+      c => c.name === dimensionColNames[1],
     );
     if (!middleDimension.item) {
       throw new Error(
-        `Could not find column based on "pie.middle_dimension" (${settings["pie.middle_dimension"]})`,
+        `Could not find column based on "pie.dimension" (${settings["pie.dimension"]})`,
       );
     }
 
@@ -77,17 +77,14 @@ function getColDescs(
     };
   }
 
-  if (
-    settings["pie.middle_dimension"] != null &&
-    settings["pie.outer_dimension"] != null
-  ) {
+  if (dimensionColNames.length > 2) {
     const outerDimension = findWithIndex(
       cols,
-      c => c.name === settings["pie.outer_dimension"],
+      c => c.name === dimensionColNames[2],
     );
     if (!outerDimension.item) {
       throw new Error(
-        `Could not find column based on "pie.outer_dimension" (${settings["pie.outer_dimension"]})`,
+        `Could not find column based on "pie.dimension" (${settings["pie.dimension"]})`,
       );
     }
 
@@ -175,8 +172,7 @@ export function getPieChartModel(
     return currTotal + value;
   }, 0);
 
-  // Create sliceTree, fill out first layer, the innermost slices based on
-  // "pie.dimension"
+  // Create sliceTree, fill out the innermost slice ring
   const sliceTree: SliceTree = new Map();
   const [sliceTreeNodes, others] = _.chain(pieRowsWithValues)
     .map(({ value, color, key, name, isOther }, index) => ({

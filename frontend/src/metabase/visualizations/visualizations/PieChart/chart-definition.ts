@@ -99,14 +99,6 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
       getDefault: (rawSeries: Series) =>
         getDefaultPieColumns(rawSeries).dimension,
     }),
-    "pie.middle_dimension": {
-      hidden: true,
-      getDefault: rawSeries => getDefaultPieColumns(rawSeries).middleDimension,
-    },
-    "pie.outer_dimension": {
-      hidden: true,
-      getDefault: rawSeries => getDefaultPieColumns(rawSeries).outerDimension,
-    },
     "pie.rows": {
       hidden: true,
       getValue: (rawSeries, settings) => {
@@ -182,12 +174,7 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
         settings,
         onChangeSettings,
       }),
-      readDependencies: [
-        "pie.dimension",
-        "pie.middle_dimension",
-        "pie.outer_dimension",
-        "pie.rows",
-      ],
+      readDependencies: ["pie.dimension", "pie.rows"],
     },
     "pie.show_legend": {
       section: t`Display`,
