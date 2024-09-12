@@ -1,9 +1,6 @@
 import { aliases, colors } from "metabase/lib/colors";
 import { checkNumber } from "metabase/lib/types";
-import type {
-  ComputedVisualizationSettings,
-  RenderingContext,
-} from "metabase/visualizations/types";
+import type { RenderingContext } from "metabase/visualizations/types";
 
 const ACCENT_KEY_PREFIX = "accent";
 function getAccentNumberFromHex(hexColor: string) {
@@ -40,11 +37,10 @@ function getAccentNumberFromHex(hexColor: string) {
 export function getColorForRing(
   hexColor: string,
   ring: "inner" | "middle" | "outer",
-  settings: ComputedVisualizationSettings,
+  hasMultipleRings: boolean,
   renderingContext: RenderingContext,
 ) {
-  if (settings["pie.middle_dimension"] == null) {
-    // TODO update this
+  if (!hasMultipleRings) {
     return hexColor;
   }
 

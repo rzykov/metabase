@@ -185,7 +185,12 @@ export function getPieChartModel(
       value,
       displayValue: value,
       normalizedPercentage: value / total, // slice percentage values are normalized to 0-1 scale
-      color: getColorForRing(color, "inner", settings, renderingContext),
+      color: getColorForRing(
+        color,
+        "inner",
+        colDescs.middleDimensionDesc != null,
+        renderingContext,
+      ),
       children: new Map(),
       column: colDescs.dimensionDesc.column,
       rowIndex: checkNotNull(rowIndiciesByKey.get(key)),
@@ -273,7 +278,7 @@ export function getPieChartModel(
           color: getColorForRing(
             dimensionNode.color,
             "middle",
-            settings,
+            true,
             renderingContext,
           ),
           column: colDescs.middleDimensionDesc.column,
@@ -328,7 +333,7 @@ export function getPieChartModel(
           color: getColorForRing(
             dimensionNode.color,
             "outer",
-            settings,
+            true,
             renderingContext,
           ),
           column: colDescs.outerDimensionDesc.column,
