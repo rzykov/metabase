@@ -55,11 +55,11 @@ export function StaticEmbeddingSettings({
           onChange={handleToggleStaticEmbedding}
         />
         <Box data-testid="embedding-secret-key-setting">
-          <SettingHeader
-            id="setting-embedding-secret-key"
-            setting={embeddingSecretKeySetting}
-          />
           <SetByEnvVarWrapper setting={embeddingSecretKeySetting}>
+            <SettingHeader
+              id="setting-embedding-secret-key"
+              setting={embeddingSecretKeySetting}
+            />
             <SecretKeyWidget
               id="setting-embedding-secret-key"
               key={isStaticEmbeddingEnabled.toString()}

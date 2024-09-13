@@ -177,11 +177,11 @@ export function EmbeddingSdkSettings({
         </Box>
 
         <Box>
-          <SettingHeader
-            id={sdkOriginsSetting.key}
-            setting={sdkOriginsSetting}
-          />
           <SetByEnvVarWrapper setting={sdkOriginsSetting}>
+            <SettingHeader
+              id={sdkOriginsSetting.key}
+              setting={sdkOriginsSetting}
+            />
             <SettingTextInput
               id={sdkOriginsSetting.key}
               setting={sdkOriginsSetting}

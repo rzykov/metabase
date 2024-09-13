@@ -79,11 +79,11 @@ export function InteractiveEmbeddingSettings({
           onChange={handleToggleInteractiveEmbedding}
         />
         <Box>
-          <SettingHeader
-            id={interactiveEmbeddingOriginsSetting.key}
-            setting={interactiveEmbeddingOriginsSetting}
-          />
           <SetByEnvVarWrapper setting={interactiveEmbeddingOriginsSetting}>
+            <SettingHeader
+              id={interactiveEmbeddingOriginsSetting.key}
+              setting={interactiveEmbeddingOriginsSetting}
+            />
             <SettingTextInput
               id={interactiveEmbeddingOriginsSetting.key}
               setting={interactiveEmbeddingOriginsSetting}
@@ -93,8 +93,8 @@ export function InteractiveEmbeddingSettings({
           </SetByEnvVarWrapper>
         </Box>
         <Box>
-          <SettingHeader id={sameSiteSetting.key} setting={sameSiteSetting} />
           <SetByEnvVarWrapper setting={sameSiteSetting}>
+            <SettingHeader id={sameSiteSetting.key} setting={sameSiteSetting} />
             <SameSiteSelectWidget
               setting={sameSiteSetting}
               onChange={handleChangeSameSite}
