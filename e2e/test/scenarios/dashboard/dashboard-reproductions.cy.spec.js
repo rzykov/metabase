@@ -12,6 +12,7 @@ import {
   appBar,
   cartesianChartCircle,
   closeDashboardInfoSidebar,
+  closeDashboardSettingsSidebar,
   createDashboard,
   createDashboardWithTabs,
   createSegment,
@@ -30,6 +31,7 @@ import {
   modal,
   navigationSidebar,
   openDashboardInfoSidebar,
+  openDashboardSettingsSidebar,
   openQuestionsSidebar,
   popover,
   queryBuilderHeader,
@@ -394,9 +396,15 @@ describe("issue 16559", () => {
           .should("be.visible");
 
         cy.log("Toggle auto-apply filters");
+      });
+      closeDashboardInfoSidebar();
 
-        cy.findByRole("tab", { name: "Overview" }).click();
-        cy.findByText("Auto-apply filters").click();
+      openDashboardSettingsSidebar();
+      sidesheet().findByText("Auto-apply filters").click();
+      closeDashboardSettingsSidebar();
+
+      openDashboardInfoSidebar();
+      sidesheet().within(() => {
         cy.findByRole("tab", { name: "History" }).click();
 
         cy.findByTestId("dashboard-history-list")
