@@ -1,3 +1,8 @@
+import type {
+  EnterpriseSettingKey,
+  EnterpriseSettings,
+} from "metabase-enterprise/settings/types";
+
 export interface FormattingSettings {
   "type/Temporal"?: DateFormattingSettings;
   "type/Number"?: NumberFormattingSettings;
@@ -181,12 +186,14 @@ export type PasswordComplexity = {
 
 export type SessionCookieSameSite = "lax" | "strict" | "none";
 
-export interface SettingDefinition<Key extends SettingKey = SettingKey> {
+export interface SettingDefinition<
+  Key extends EnterpriseSettingKey = EnterpriseSettingKey,
+> {
   key: Key;
   env_name?: string;
   is_env_setting: boolean;
-  value: Settings[Key] | null;
-  default?: Settings[Key];
+  value: EnterpriseSettings[Key] | null;
+  default?: EnterpriseSettings[Key];
 }
 
 export interface OpenAiModel {
