@@ -113,10 +113,10 @@
                   :manifest-src ["'self'"]}]
       (format "%s %s; " (name k) (str/join " " vs))))})
 
-(defn- embedding-app-origin
+(defn- embedding-app-origins-interactive
   []
-  (when (and (embed.settings/enable-embedding) (embed.settings/embedding-app-origin))
-    (embed.settings/embedding-app-origin)))
+  (when (and (embed.settings/enable-embedding-interactive) (embed.settings/embedding-app-origins-interactive))
+    (embed.settings/embedding-app-origins-interactive)))
 
 (defn- embedding-app-origin-sdk
   []
@@ -127,7 +127,7 @@
   [allow-iframes? nonce]
   (update (content-security-policy-header nonce)
           "Content-Security-Policy"
-          #(format "%s frame-ancestors %s;" % (if allow-iframes? "*" (or (embedding-app-origin) "'none'")))))
+          #(format "%s frame-ancestors %s;" % (if allow-iframes? "*" (or (embedding-app-origins-interactive) "'none'")))))
 
 (defn parse-url
   "Returns an object with protocol, domain and port for the given url"
@@ -197,10 +197,10 @@
     "Access-Control-Allow-Methods"   "*"
     "Access-Control-Expose-Headers"  "X-Metabase-Anti-CSRF-Token"}))
 
-(defn- first-embedding-app-origin
+(defn- first-embedding-app-origins-interactive
   "Return only the first embedding app origin."
   []
-  (some-> (embedding-app-origin)
+  (some-> (embedding-app-origins-interactive)
           (str/split #" ")
           first))
 
@@ -217,8 +217,8 @@
    (when (embedding-app-origin-sdk) (access-control-headers origin))
    (when-not allow-iframes?
      ;; Tell browsers not to render our site as an iframe (prevent clickjacking)
-     {"X-Frame-Options"                 (if (embedding-app-origin)
-                                          (format "ALLOW-FROM %s" (first-embedding-app-origin))
+     {"X-Frame-Options"                 (if (embedding-app-origins-interactive)
+                                          (format "ALLOW-FROM %s" (first-embedding-app-origins-interactive))
                                           "DENY")})
    {;; Tell browser to block suspected XSS attacks
     "X-XSS-Protection"                  "1; mode=block"

@@ -24,6 +24,14 @@
   :encryption :never
   :audit      :getter)
 
+(defsetting embedding-app-origins-interactive
+  (deferred-tru "Allow this origin to embed the full Metabase application")
+  :feature    :embedding
+  :export?    false
+  :visibility :public
+  :encryption :never
+  :audit      :getter)
+
 (defsetting enable-embedding
   (deferred-tru "Allow admins to securely embed questions and dashboards within other applications?")
   :type       :boolean

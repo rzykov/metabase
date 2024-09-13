@@ -292,6 +292,7 @@ interface PublicSettings {
   "email-configured?": boolean;
   "embedding-app-origin": string;
   "embedding-app-origins-sdk": string;
+  "embedding-app-origins-interactive": string;
   "enable-enhancements?": boolean;
   "enable-password-login": boolean;
   engines: Record<string, Engine>;
