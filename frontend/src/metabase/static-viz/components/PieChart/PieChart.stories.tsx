@@ -321,3 +321,45 @@ MissingLabelLargeSlice38424.args = {
   dashcardSettings: {},
   renderingContext,
 };
+
+export const TwoRings = Template.bind({});
+TwoRings.args = {
+  rawSeries: data.twoRings as any,
+  dashcardSettings: {},
+  renderingContext,
+};
+
+export const ThreeRings = Template.bind({});
+ThreeRings.args = {
+  rawSeries: data.threeRings as any,
+  dashcardSettings: {},
+  renderingContext,
+};
+
+export const ThreeRingsNoLabels = Template.bind({});
+ThreeRingsNoLabels.args = {
+  rawSeries: data.threeRingsNoLabels as any,
+  dashcardSettings: {},
+  renderingContext,
+};
+
+export const ThreeRingsOtherSlices = Template.bind({});
+ThreeRingsOtherSlices.args = {
+  rawSeries: data.threeRingsOtherSlices as any,
+  dashcardSettings: {},
+  renderingContext,
+};
+
+export const LabelsWithPercent = Template.bind({});
+LabelsWithPercent.args = {
+  rawSeries: data.labelsWithPercent as any,
+  dashcardSettings: {},
+  renderingContext,
+};
+
+export const LabelsOnChart = Template.bind({});
+LabelsOnChart.args = {
+  rawSeries: data.labelsOnChart as any,
+  dashcardSettings: {},
+  renderingContext,
+};
