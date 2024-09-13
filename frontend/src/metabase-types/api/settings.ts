@@ -181,12 +181,12 @@ export type PasswordComplexity = {
 
 export type SessionCookieSameSite = "lax" | "strict" | "none";
 
-export interface SettingDefinition {
-  key: string;
+export interface SettingDefinition<Key extends SettingKey = SettingKey> {
+  key: Key;
   env_name?: string;
   is_env_setting: boolean;
-  value?: unknown;
-  default?: unknown;
+  value: Settings[Key] | null;
+  default?: Settings[Key];
 }
 
 export interface OpenAiModel {

@@ -1,5 +1,5 @@
 import cx from "classnames";
-import type { ChangeEventHandler } from "react";
+import type { ChangeEventHandler, ComponentProps } from "react";
 import { Link } from "react-router";
 import { jt, t } from "ttag";
 
@@ -23,6 +23,8 @@ import {
   Text,
   Title,
 } from "metabase/ui";
+
+import { useMergeSetting } from "../../EmbeddingSettings/hooks";
 
 import EmbeddingOptionStyle from "./EmbeddingOption.module.css";
 import { BoldExternalLink, Label, StyledCard } from "./EmbeddingOption.styled";
@@ -108,12 +110,8 @@ export const StaticEmbeddingOptionCard = ({
         >
           {t`Manage`}
         </LinkButton>
-        <Switch
-          size="sm"
-          label={isStaticEmbeddingEnabled ? t`Enabled` : t`Disabled`}
-          ml="auto"
-          labelPosition="left"
-          checked={isStaticEmbeddingEnabled}
+        <SwitchWithSetByEnvVar
+          settingKey="enable-embedding-static"
           onChange={onToggle}
         />
       </Flex>
@@ -147,12 +145,8 @@ export function EmbeddingSdkOptionCard({ onToggle }: EmbeddingOptionCardProps) {
         <LinkButton to={"/admin/settings/embedding-in-other-applications/sdk"}>
           {!isEE ? t`Try it out` : t`Configure`}
         </LinkButton>
-        <Switch
-          size="sm"
-          label={isEmbeddingSdkEnabled ? t`Enabled` : t`Disabled`}
-          ml="auto"
-          labelPosition="left"
-          checked={isEmbeddingSdkEnabled}
+        <SwitchWithSetByEnvVar
+          settingKey="enable-embedding-sdk"
           onChange={onToggle}
         />
       </Flex>
@@ -218,13 +212,9 @@ export const InteractiveEmbeddingOptionCard = ({
             {t`Learn More`}
           </Button>
         )}
-        <Switch
-          size="sm"
-          label={isInteractiveEmbeddingEnabled ? t`Enabled` : t`Disabled`}
-          ml="auto"
-          labelPosition="left"
+        <SwitchWithSetByEnvVar
+          settingKey="enable-embedding-interactive"
           disabled={!isEE}
-          checked={isInteractiveEmbeddingEnabled}
           onChange={onToggle}
         />
       </Flex>
@@ -247,3 +237,40 @@ const LinkButton = ({
     </Link>
   );
 };
+
+interface SwitchWithSetByEnvVarProps extends ComponentProps<typeof Switch> {
+  settingKey:
+    | "enable-embedding-static"
+    | "enable-embedding-sdk"
+    | "enable-embedding-interactive";
+}
+function SwitchWithSetByEnvVar({
+  settingKey,
+  ...switchProps
+}: SwitchWithSetByEnvVarProps) {
+  const setting = useMergeSetting({
+    key: settingKey,
+  });
+
+  if (setting.is_env_setting) {
+    return (
+      <Text
+        ml="auto"
+        color="var(--mb-color-text-secondary)"
+      >{t`Set via environment variable`}</Text>
+    );
+  }
+
+  const isEnabled = Boolean(setting.value);
+  return (
+    <Switch
+      {...switchProps}
+      label={isEnabled ? t`Enabled` : t`Disabled`}
+      size="sm"
+      ml="auto"
+      labelPosition="left"
+      checked={isEnabled}
+      disabled={setting.is_env_setting ? true : switchProps.disabled}
+    />
+  );
+}
