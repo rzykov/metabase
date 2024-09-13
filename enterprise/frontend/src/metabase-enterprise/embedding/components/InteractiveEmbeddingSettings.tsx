@@ -6,9 +6,8 @@ import type { AdminSettingComponentProps } from "metabase/admin/settings/compone
 import SettingHeader from "metabase/admin/settings/components/SettingHeader";
 import { SetByEnvVarWrapper } from "metabase/admin/settings/components/SettingsSetting";
 import { SettingTextInput } from "metabase/admin/settings/components/widgets/SettingTextInput";
-import { useSetting } from "metabase/common/hooks/use-setting/use-setting";
 import Breadcrumbs from "metabase/components/Breadcrumbs";
-import { Box, Stack, Switch } from "metabase/ui";
+import { Box, Stack, Switch, Text } from "metabase/ui";
 import type { SessionCookieSameSite } from "metabase-types/api";
 
 import { EmbeddingAppOriginDescription } from "./EmbeddingAppOriginDescription";
@@ -34,8 +33,11 @@ const SAME_SITE_SETTING = {
 export function InteractiveEmbeddingSettings({
   updateSetting,
 }: AdminSettingComponentProps) {
-  const isInteractiveEmbeddingEnabled = useSetting(
-    "enable-embedding-interactive",
+  const enableEmbeddingInteractiveSetting = useMergeSetting({
+    key: "enable-embedding-interactive",
+  });
+  const isInteractiveEmbeddingEnabled = Boolean(
+    enableEmbeddingInteractiveSetting.value,
   );
 
   function handleToggleInteractiveEmbedding(
@@ -71,13 +73,19 @@ export function InteractiveEmbeddingSettings({
             [t`Interactive embedding`],
           ]}
         />
-        <Switch
-          label={t`Enable Interactive embedding`}
-          labelPosition="left"
-          size="sm"
-          checked={isInteractiveEmbeddingEnabled}
-          onChange={handleToggleInteractiveEmbedding}
-        />
+
+        {enableEmbeddingInteractiveSetting.is_env_setting ? (
+          <Text color="var(--mb-color-text-secondary)">{t`Set via environment variable`}</Text>
+        ) : (
+          <Switch
+            label={t`Enable Interactive embedding`}
+            labelPosition="left"
+            size="sm"
+            checked={isInteractiveEmbeddingEnabled}
+            onChange={handleToggleInteractiveEmbedding}
+          />
+        )}
+
         <Box>
           <SetByEnvVarWrapper setting={interactiveEmbeddingOriginsSetting}>
             <SettingHeader
@@ -92,6 +100,7 @@ export function InteractiveEmbeddingSettings({
             />
           </SetByEnvVarWrapper>
         </Box>
+
         <Box>
           <SetByEnvVarWrapper setting={sameSiteSetting}>
             <SettingHeader id={sameSiteSetting.key} setting={sameSiteSetting} />

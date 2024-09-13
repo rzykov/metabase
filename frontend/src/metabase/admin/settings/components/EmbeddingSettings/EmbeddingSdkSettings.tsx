@@ -22,7 +22,10 @@ export function EmbeddingSdkSettings({
   updateSetting,
 }: AdminSettingComponentProps) {
   const isEE = PLUGIN_EMBEDDING_SDK.isEnabled();
-  const isEmbeddingSdkEnabled = useSetting("enable-embedding-sdk");
+  const enableEmbeddingSdkSetting = useMergeSetting({
+    key: "enable-embedding-sdk",
+  });
+  const isEmbeddingSdkEnabled = Boolean(enableEmbeddingSdkSetting.value);
   const canEditSdkOrigins = isEE && isEmbeddingSdkEnabled;
 
   const isHosted = useSetting("is-hosted?");
@@ -131,13 +134,17 @@ export function EmbeddingSdkSettings({
           ]}
         />
 
-        <Switch
-          label={t`Enable Embedded analytics SDK`}
-          labelPosition="left"
-          size="sm"
-          checked={isEmbeddingSdkEnabled}
-          onChange={handleToggleEmbeddingSdk}
-        />
+        {enableEmbeddingSdkSetting.is_env_setting ? (
+          <Text color="var(--mb-color-text-secondary)">{t`Set via environment variable`}</Text>
+        ) : (
+          <Switch
+            label={t`Enable Embedded analytics SDK`}
+            labelPosition="left"
+            size="sm"
+            checked={isEmbeddingSdkEnabled}
+            onChange={handleToggleEmbeddingSdk}
+          />
+        )}
 
         <Alert
           icon={

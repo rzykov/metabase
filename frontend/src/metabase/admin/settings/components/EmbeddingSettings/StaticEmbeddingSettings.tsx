@@ -1,9 +1,8 @@
 import type { ChangeEvent } from "react";
 import { t } from "ttag";
 
-import { useSetting } from "metabase/common/hooks";
 import Breadcrumbs from "metabase/components/Breadcrumbs";
-import { Box, Stack, Switch } from "metabase/ui";
+import { Box, Stack, Switch, Text } from "metabase/ui";
 
 import SettingHeader from "../SettingHeader";
 import { SettingTitle } from "../SettingHeader/SettingHeader.styled";
@@ -27,7 +26,10 @@ export function StaticEmbeddingSettings({
     EMBEDDING_SECRET_KEY_SETTING,
   );
 
-  const isStaticEmbeddingEnabled = useSetting("enable-embedding-static");
+  const enableEmbeddingStaticSetting = useMergeSetting({
+    key: "enable-embedding-static",
+  });
+  const isStaticEmbeddingEnabled = Boolean(enableEmbeddingStaticSetting.value);
 
   function handleChangeEmbeddingSecretKey(value: string | null) {
     updateSetting({ key: embeddingSecretKeySetting.key }, value);
@@ -47,13 +49,19 @@ export function StaticEmbeddingSettings({
             [t`Static embedding`],
           ]}
         />
-        <Switch
-          label={t`Enable Static embedding`}
-          labelPosition="left"
-          size="sm"
-          checked={isStaticEmbeddingEnabled}
-          onChange={handleToggleStaticEmbedding}
-        />
+
+        {enableEmbeddingStaticSetting.is_env_setting ? (
+          <Text color="var(--mb-color-text-secondary)">{t`Set via environment variable`}</Text>
+        ) : (
+          <Switch
+            label={t`Enable Static embedding`}
+            labelPosition="left"
+            size="sm"
+            checked={isStaticEmbeddingEnabled}
+            onChange={handleToggleStaticEmbedding}
+          />
+        )}
+
         <Box data-testid="embedding-secret-key-setting">
           <SetByEnvVarWrapper setting={embeddingSecretKeySetting}>
             <SettingHeader
@@ -72,6 +80,7 @@ export function StaticEmbeddingSettings({
             />
           </SetByEnvVarWrapper>
         </Box>
+
         <Box data-testid="embedded-resources">
           <SettingTitle>{t`Manage embeds`}</SettingTitle>
           <EmbeddedResources key={isStaticEmbeddingEnabled.toString()} />
