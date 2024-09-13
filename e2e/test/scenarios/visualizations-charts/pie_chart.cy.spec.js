@@ -15,7 +15,7 @@ import {
   visualize,
 } from "e2e/support/helpers";
 
-const { PRODUCTS, PRODUCTS_ID } = SAMPLE_DATABASE;
+const { PRODUCTS, PRODUCTS_ID, ORDERS_ID, ORDERS } = SAMPLE_DATABASE;
 
 const testQuery = {
   type: "query",
@@ -27,6 +27,26 @@ const testQuery = {
   database: SAMPLE_DB_ID,
 };
 
+const twoRingQuery = {
+  database: 1,
+  type: "query",
+  query: {
+    "source-table": ORDERS_ID,
+    aggregation: [["count"]],
+    breakout: [
+      [
+        "field",
+        ORDERS.CREATED_AT,
+        { "base-type": "type/DateTime", "temporal-unit": "day-of-week" },
+      ],
+      [
+        "field",
+        PRODUCTS.CATEGORY,
+        { "base-type": "type/Text", "source-field": ORDERS.PRODUCT_ID },
+      ],
+    ],
+  },
+};
 describe("scenarios > visualizations > pie chart", () => {
   beforeEach(() => {
     restore();
@@ -39,7 +59,12 @@ describe("scenarios > visualizations > pie chart", () => {
       display: "pie",
     });
 
-    ensurePieChartRendered(["Doohickey", "Gadget", "Gizmo", "Widget"], 200);
+    ensurePieChartRendered(
+      ["Doohickey", "Gadget", "Gizmo", "Widget"],
+      null,
+      null,
+      200,
+    );
 
     cy.log("#35244");
     cy.findByLabelText("Switch to data").click();
@@ -180,9 +205,32 @@ describe("scenarios > visualizations > pie chart", () => {
       cy.get("li").eq(2).contains("Woooget");
     });
   });
+
+  it("should automatically map dimension columns in query to rings", () => {
+    visitQuestionAdhoc({
+      dataset_query: twoRingQuery,
+      display: "pie",
+    });
+
+    cy.findByTestId("viz-type-button").click();
+    cy.findByTestId("Pie-button").click();
+
+    ensurePieChartRendered(
+      [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
+      ["Doohickey", "Gadget", "Gizmo", "Widget"],
+    );
+  });
 });
 
-function ensurePieChartRendered(rows, totalValue) {
+function ensurePieChartRendered(rows, middleRows, outerRows, totalValue) {
   cy.findByTestId("query-visualization-root").within(() => {
     // detail
     if (totalValue != null) {
@@ -191,7 +239,12 @@ function ensurePieChartRendered(rows, totalValue) {
     }
 
     // slices
-    pieSlices().should("have.length", rows.length);
+    let rowCount = rows.length;
+    if (middleRows != null && middleRows.length > 0) {
+      rowCount += rows.length * middleRows.length;
+    }
+
+    pieSlices().should("have.length", rowCount);
 
     // legend
     rows.forEach((name, i) => {
