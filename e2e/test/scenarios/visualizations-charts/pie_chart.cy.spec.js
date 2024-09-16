@@ -15,7 +15,7 @@ import {
   visualize,
 } from "e2e/support/helpers";
 
-const { PRODUCTS, PRODUCTS_ID, ORDERS_ID, ORDERS } = SAMPLE_DATABASE;
+const { PRODUCTS, PRODUCTS_ID, ORDERS_ID, ORDERS, PEOPLE } = SAMPLE_DATABASE;
 
 const testQuery = {
   type: "query",
@@ -47,6 +47,33 @@ const twoRingQuery = {
     ],
   },
 };
+
+const threeRingQuery = {
+  database: 1,
+  type: "query",
+  query: {
+    "source-table": ORDERS_ID,
+    aggregation: [["count"]],
+    breakout: [
+      [
+        "field",
+        ORDERS.CREATED_AT,
+        { "base-type": "type/DateTime", "temporal-unit": "year" },
+      ],
+      [
+        "field",
+        PEOPLE.SOURCE,
+        { "base-type": "type/Text", "source-field": ORDERS.USER_ID },
+      ],
+      [
+        "field",
+        PRODUCTS.CATEGORY,
+        { "base-type": "type/Text", "source-field": ORDERS.PRODUCT_ID },
+      ],
+    ],
+  },
+};
+
 describe("scenarios > visualizations > pie chart", () => {
   beforeEach(() => {
     restore();
@@ -212,6 +239,7 @@ describe("scenarios > visualizations > pie chart", () => {
       display: "pie",
     });
 
+    // TODO try removing after updating isSensible
     cy.findByTestId("viz-type-button").click();
     cy.findByTestId("Pie-button").click();
 
@@ -228,6 +256,64 @@ describe("scenarios > visualizations > pie chart", () => {
       ["Doohickey", "Gadget", "Gizmo", "Widget"],
     );
   });
+
+  it("should allow the user to edit rings", () => {
+    visitQuestionAdhoc({
+      dataset_query: threeRingQuery,
+      display: "pie",
+      visualization_settings: {
+        "pie.slice_threshold": 0,
+      },
+    });
+
+    // TODO try removing after updating isSensible
+    cy.findByTestId("viz-type-button").click();
+    cy.findByTestId("Pie-button").click();
+
+    ensurePieChartRendered(
+      ["2022", "2023", "2024", "2025", "2026"],
+      ["Affiliate", "Facebook", "Google", "Organic", "Twitter"],
+      ["Doohickey", "Gadget", "Gizmo", "Widget"],
+    );
+
+    cy.findByTestId("viz-settings-button").click();
+
+    cy.findAllByTestId("chartsettings-field-picker")
+      .last()
+      .within(() => {
+        cy.icon("close").click();
+      });
+
+    ensurePieChartRendered(
+      ["2022", "2023", "2024", "2025", "2026"],
+      ["Affiliate", "Facebook", "Google", "Organic", "Twitter"],
+    );
+
+    cy.findAllByTestId("chartsettings-field-picker")
+      .last()
+      .within(() => {
+        cy.icon("chevrondown").click();
+      });
+
+    cy.get("[data-element-id=list-section]").last().click();
+
+    ensurePieChartRendered(
+      ["2022", "2023", "2024", "2025", "2026"],
+      ["Doohickey", "Gadget", "Gizmo", "Widget"],
+    );
+
+    leftSidebar().within(() => {
+      cy.findByText("Add Ring").click();
+    });
+
+    cy.get("[data-element-id=list-section]").last().click();
+
+    ensurePieChartRendered(
+      ["2022", "2023", "2024", "2025", "2026"],
+      ["Doohickey", "Gadget", "Gizmo", "Widget"],
+      ["Affiliate", "Facebook", "Google", "Organic", "Twitter"],
+    );
+  });
 });
 
 function ensurePieChartRendered(rows, middleRows, outerRows, totalValue) {
@@ -240,10 +326,15 @@ function ensurePieChartRendered(rows, middleRows, outerRows, totalValue) {
 
     // slices
     let rowCount = rows.length;
-    if (middleRows != null && middleRows.length > 0) {
+    const hasMiddleRows = middleRows != null && middleRows.length > 0;
+    const hasOuterRows = outerRows != null && outerRows.length > 0;
+
+    if (hasMiddleRows) {
       rowCount += rows.length * middleRows.length;
     }
-
+    if (hasMiddleRows && hasOuterRows) {
+      rowCount += rows.length * middleRows.length * outerRows.length;
+    }
     pieSlices().should("have.length", rowCount);
 
     // legend
