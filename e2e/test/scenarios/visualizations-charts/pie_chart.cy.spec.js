@@ -241,10 +241,6 @@ describe("scenarios > visualizations > pie chart", () => {
       display: "pie",
     });
 
-    // TODO try removing after updating isSensible
-    cy.findByTestId("viz-type-button").click();
-    cy.findByTestId("Pie-button").click();
-
     ensurePieChartRendered(
       [
         "Sunday",
@@ -267,10 +263,6 @@ describe("scenarios > visualizations > pie chart", () => {
         "pie.slice_threshold": 0,
       },
     });
-
-    // TODO try removing after updating isSensible
-    cy.findByTestId("viz-type-button").click();
-    cy.findByTestId("Pie-button").click();
 
     ensurePieChartRendered(
       ["2022", "2023", "2024", "2025", "2026"],
@@ -325,10 +317,6 @@ describe("scenarios > visualizations > pie chart", () => {
         "pie.slice_threshold": 0,
       },
     });
-
-    // TODO try removing after updating isSensible
-    cy.findByTestId("viz-type-button").click();
-    cy.findByTestId("Pie-button").click();
 
     ensurePieChartRendered(
       [
@@ -399,10 +387,6 @@ describe("scenarios > visualizations > pie chart", () => {
     });
 
     cy.go("back");
-
-    // TODO try removing after updating isSensible
-    cy.findByTestId("viz-type-button").click();
-    cy.findByTestId("Pie-button").click();
 
     ensurePieChartRendered(
       [
