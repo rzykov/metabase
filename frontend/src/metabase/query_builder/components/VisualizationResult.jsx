@@ -14,17 +14,6 @@ import * as Lib from "metabase-lib";
 import { ALERT_TYPE_ROWS } from "metabase-lib/v1/Alert";
 import { datasetContainsNoResults } from "metabase-lib/v1/queries/utils/dataset";
 
-const ALLOWED_VISUALIZATION_PROPS = [
-  // Table
-  "isShowingDetailsOnlyColumns",
-  // Table Interactive
-  "hasMetadataPopovers",
-  "tableHeaderHeight",
-  "scrollToColumn",
-  "renderTableHeaderWrapper",
-  "mode",
-];
-
 export default class VisualizationResult extends Component {
   state = {
     showCreateAlertModal: false,
@@ -111,10 +100,6 @@ export default class VisualizationResult extends Component {
         </div>
       );
     } else {
-      const vizSpecificProps = _.pick(
-        this.props,
-        ...ALLOWED_VISUALIZATION_PROPS,
-      );
       const { isEditable } = Lib.queryDisplayInfo(question.query());
       const hasDrills = isEditable;
       return (
@@ -143,7 +128,12 @@ export default class VisualizationResult extends Component {
             onUpdateVisualizationSettings={
               this.props.onUpdateVisualizationSettings
             }
-            {...vizSpecificProps}
+            isShowingDetailsOnlyColumns={this.props.isShowingDetailsOnlyColumns}
+            hasMetadataPopovers={this.props.hasMetadataPopovers}
+            tableHeaderHeight={this.props.tableHeaderHeight}
+            scrollToColumn={this.props.scrollToColumn}
+            renderTableHeaderWrapper={this.props.renderTableHeaderWrapper}
+            mode={this.props.mode}
           />
           {this.props.isObjectDetail && (
             <Visualization

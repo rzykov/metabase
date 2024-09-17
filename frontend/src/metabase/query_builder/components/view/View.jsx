@@ -1,6 +1,4 @@
 /* eslint-disable react/prop-types */
-import { Component } from "react";
-import { connect } from "react-redux";
 import { match } from "ts-pattern";
 import { t } from "ttag";
 import _ from "underscore";
@@ -14,6 +12,7 @@ import CS from "metabase/css/core/index.css";
 import QueryBuilderS from "metabase/css/query_builder.module.css";
 import Bookmarks from "metabase/entities/bookmarks";
 import Questions from "metabase/entities/questions";
+import { useDispatch } from "metabase/lib/redux";
 import {
   rememberLastUsedDatabase,
   setArchivedQuestion,
@@ -60,27 +59,151 @@ const fadeIn = {
   transitionProperty: "opacity",
 };
 
-class View extends Component {
-  getLeftSidebar = () => {
-    const {
-      question,
-      result,
-      isShowingChartSettingsSidebar,
-      isShowingChartTypeSidebar,
-      onCloseChartSettings,
-    } = this.props;
+const View = ({
+  question,
+  result,
+  isShowingChartSettingsSidebar,
+  isShowingChartTypeSidebar,
+  onCloseChartSettings,
+  addField,
+  initialChartSetting,
+  onReplaceAllVisualizationSettings,
+  onOpenChartType,
+  visualizationSettings,
+  showSidebarTitle,
+  rawSeries,
+  databases,
+  isShowingNewbModal,
+  isShowingTimelineSidebar,
+  queryBuilderMode,
+  closeQbNewbModal,
+  onDismissToast,
+  onConfirmToast,
+  isShowingToaster,
+  isHeaderVisible,
+  updateQuestion,
+  reportTimezone,
+  readOnly,
+  isDirty,
+  isRunning,
+  isRunnable,
+  isResultDirty,
+  hasVisualizeButton,
+  runQuestionQuery,
+  cancelQuery,
+  setQueryBuilderMode,
+  isShowingQuestionInfoSidebar,
+  isShowingQuestionSettingsSidebar,
+  cancelQuestionChanges,
+  onCreate,
+  onSave,
+  onChangeLocation,
+  card,
+  height,
+  isNativeEditorOpen,
+  setParameterValueToDefault,
+  mode,
+  parameters,
+  isLiveResizable,
+  setParameterValue,
+  questionAlerts,
+  isShowingTemplateTagsEditor,
+  isShowingDataReference,
+  isShowingSnippetSidebar,
+  toggleTemplateTagsEditor,
+  toggleDataReference,
+  toggleSnippetSidebar,
+  showTimelineEvent,
+  showTimelineEvents,
+  hideTimelineEvents,
+  selectTimelineEvents,
+  deselectTimelineEvents,
+  onCloseTimelines,
+  onCloseQuestionInfo,
+  user,
+  modal,
+  modalContext,
+  onCloseModal,
+  onOpenModal,
+  originalQuestion,
+  timelines,
+  isShowingSummarySidebar,
+  visibleTimelineEventIds,
+  selectedTimelineEventIds,
+  xDomain,
+  databaseFields,
+  sampleDatabaseId,
+  setDatasetQuery,
+  setTemplateTag,
+  setTemplateTagConfig,
+  getEmbeddedParameterVisibility,
+  dataReferenceStack,
+  popDataReferenceStack,
+  pushDataReferenceStack,
+  setModalSnippet,
+  openSnippetModalWithSelectedText,
+  insertSnippet,
+  isObjectDetail,
+  isAdditionalInfoVisible,
+  onOpenQuestionInfo,
+  isNavBarOpen,
+  isBookmarked,
+  toggleBookmark,
+  isActionListVisible,
+  onEditSummary,
+  onCloseSummary,
+  turnModelIntoQuestion,
+  onModelPersistenceChange,
+  className,
+  nativeEditorSelectedText,
+  modalSnippet,
+  enableRun,
+  canChangeDatabase,
+  cancelQueryOnLeave,
+  hasTopBar,
+  hasParametersList,
+  hasEditingSidebar,
+  sidebarFeatures,
+  resizable,
+  resizableBoxProps,
+  editorContext,
+  handleResize,
+  autocompleteResultsFn,
+  cardAutocompleteResultsFn,
+  setNativeEditorSelectedRange,
+  openDataReferenceAtQuestion,
+  setIsNativeEditorOpen,
+  closeSnippetModal,
+  maxTableRows,
+  navigateToNewCardInsideQB,
+  timelineEvents,
+  onNavigateBack,
+  onShowTimelineEvents,
+  onHideTimelineEvents,
+  onSelectTimelineEvents,
+  onDeselectTimelineEvents,
+  onCancelCreateNewModel,
+  setMetadataDiff,
+}) => {
+  const dispatch = useDispatch();
+  const onSetDatabaseId = id => dispatch(rememberLastUsedDatabase(id));
+  const onUnarchive = async question => {
+    await dispatch(setArchivedQuestion(question, false));
+    await dispatch(Bookmarks.actions.invalidateLists());
+  };
+  const onMove = (question, newCollection) =>
+    dispatch(
+      Questions.actions.setCollection({ id: question.id() }, newCollection, {
+        notify: { undo: false },
+      }),
+    );
+  const onDeletePermanently = id => {
+    const deleteAction = Questions.actions.delete({ id });
+    dispatch(deletePermanently(deleteAction));
+  };
 
+  const getLeftSidebar = () => {
     if (isShowingChartSettingsSidebar) {
-      const {
-        question,
-        result,
-        addField,
-        initialChartSetting,
-        onReplaceAllVisualizationSettings,
-        onOpenChartType,
-        visualizationSettings,
-        showSidebarTitle,
-      } = this.props;
       return (
         <ChartSettingsSidebar
           question={question}
@@ -103,29 +226,7 @@ class View extends Component {
     return null;
   };
 
-  getRightSidebarForStructuredQuery = () => {
-    const {
-      question,
-      timelines,
-      isShowingSummarySidebar,
-      isShowingTimelineSidebar,
-      isShowingQuestionInfoSidebar,
-      isShowingQuestionSettingsSidebar,
-      updateQuestion,
-      visibleTimelineEventIds,
-      selectedTimelineEventIds,
-      xDomain,
-      showTimelineEvents,
-      hideTimelineEvents,
-      selectTimelineEvents,
-      deselectTimelineEvents,
-      onOpenModal,
-      onCloseSummary,
-      onCloseTimelines,
-      onCloseQuestionInfo,
-      onSave,
-    } = this.props;
-
+  const getRightSidebarForStructuredQuery = () => {
     const isSaved = question.isSaved();
 
     if (isShowingSummarySidebar) {
@@ -178,55 +279,61 @@ class View extends Component {
     return null;
   };
 
-  getRightSidebarForNativeQuery = () => {
-    const {
-      isShowingTemplateTagsEditor,
-      isShowingDataReference,
-      isShowingSnippetSidebar,
-      isShowingTimelineSidebar,
-      isShowingQuestionInfoSidebar,
-      isShowingQuestionSettingsSidebar,
-      toggleTemplateTagsEditor,
-      toggleDataReference,
-      toggleSnippetSidebar,
-      showTimelineEvent,
-      showTimelineEvents,
-      hideTimelineEvents,
-      selectTimelineEvents,
-      deselectTimelineEvents,
-      onCloseTimelines,
-      onCloseQuestionInfo,
-      onSave,
-      question,
-    } = this.props;
-
+  const getRightSidebarForNativeQuery = () => {
     if (isShowingTemplateTagsEditor) {
       return (
         <TagEditorSidebar
-          {...this.props}
           query={question.legacyQuery()}
           onClose={toggleTemplateTagsEditor}
+          card={card}
+          databases={databases}
+          databaseFields={databaseFields}
+          question={question}
+          sampleDatabaseId={sampleDatabaseId}
+          setDatasetQuery={setDatasetQuery}
+          setTemplateTag={setTemplateTag}
+          setTemplateTagConfig={setTemplateTagConfig}
+          setParameterValue={setParameterValue}
+          getEmbeddedParameterVisibility={getEmbeddedParameterVisibility}
         />
       );
     }
 
     if (isShowingDataReference) {
-      return <DataReference {...this.props} onClose={toggleDataReference} />;
+      return (
+        <DataReference
+          dataReferenceStack={dataReferenceStack}
+          popDataReferenceStack={popDataReferenceStack}
+          pushDataReferenceStack={pushDataReferenceStack}
+          onClose={toggleDataReference}
+        />
+      );
     }
 
     if (isShowingSnippetSidebar) {
-      return <SnippetSidebar {...this.props} onClose={toggleSnippetSidebar} />;
+      return (
+        <SnippetSidebar
+          setModalSnippet={setModalSnippet}
+          openSnippetModalWithSelectedText={openSnippetModalWithSelectedText}
+          insertSnippet={insertSnippet}
+          onClose={toggleSnippetSidebar}
+        />
+      );
     }
 
     if (isShowingTimelineSidebar) {
       return (
         <TimelineSidebar
-          {...this.props}
-          onShowTimelineEvent={showTimelineEvent}
-          onShowTimelineEvents={showTimelineEvents}
-          onHideTimelineEvents={hideTimelineEvents}
-          onSelectTimelineEvents={selectTimelineEvents}
-          onDeselectTimelineEvents={deselectTimelineEvents}
+          question={question}
+          timelines={timelines}
+          visibleTimelineEventIds={visibleTimelineEventIds}
+          selectedTimelineEventIds={selectedTimelineEventIds}
+          xDomain={xDomain}
+          onOpenModal={onOpenModal}
+          onShowTimelineEvents={onShowTimelineEvents}
+          onHideTimelineEvents={onHideTimelineEvents}
+          onSelectTimelineEvents={onSelectTimelineEvents}
+          onDeselectTimelineEvents={onDeselectTimelineEvents}
           onClose={onCloseTimelines}
         />
       );
@@ -249,17 +356,15 @@ class View extends Component {
     return null;
   };
 
-  getRightSidebar = () => {
-    const { question } = this.props;
+  const getRightSidebar = () => {
     const { isNative } = Lib.queryDisplayInfo(question.query());
 
     return !isNative
-      ? this.getRightSidebarForStructuredQuery()
-      : this.getRightSidebarForNativeQuery();
+      ? getRightSidebarForStructuredQuery()
+      : getRightSidebarForNativeQuery();
   };
 
-  renderHeader = () => {
-    const { question, onUnarchive, onMove, onDeletePermanently } = this.props;
+  const renderHeader = () => {
     const query = question.query();
     const card = question.card();
     const { isNative } = Lib.queryDisplayInfo(query);
@@ -282,7 +387,36 @@ class View extends Component {
         )}
 
         <BorderedViewTitleHeader
-          {...this.props}
+          question={question}
+          isObjectDetail={isObjectDetail}
+          isAdditionalInfoVisible={isAdditionalInfoVisible}
+          onOpenQuestionInfo={onOpenQuestionInfo}
+          onSave={onSave}
+          onOpenModal={onOpenModal}
+          isNavBarOpen={isNavBarOpen}
+          originalQuestion={originalQuestion}
+          result={result}
+          queryBuilderMode={queryBuilderMode}
+          updateQuestion={updateQuestion}
+          isBookmarked={isBookmarked}
+          toggleBookmark={toggleBookmark}
+          isRunnable={isRunnable}
+          isRunning={isRunning}
+          isNativeEditorOpen={isNativeEditorOpen}
+          isShowingSummarySidebar={isShowingSummarySidebar}
+          isDirty={isDirty}
+          isResultDirty={isResultDirty}
+          isActionListVisible={isActionListVisible}
+          runQuestionQuery={runQuestionQuery}
+          cancelQuery={cancelQuery}
+          onEditSummary={onEditSummary}
+          onCloseSummary={onCloseSummary}
+          setQueryBuilderMode={setQueryBuilderMode}
+          turnModelIntoQuestion={turnModelIntoQuestion}
+          isShowingQuestionInfoSidebar={isShowingQuestionInfoSidebar}
+          onCloseQuestionInfo={onCloseQuestionInfo}
+          onModelPersistenceChange={onModelPersistenceChange}
+          className={className}
           style={{
             transition: "opacity 300ms linear",
             opacity: isNewQuestion ? 0 : 1,
@@ -296,17 +430,7 @@ class View extends Component {
     );
   };
 
-  renderNativeQueryEditor = () => {
-    const {
-      question,
-      card,
-      height,
-      isDirty,
-      isNativeEditorOpen,
-      setParameterValueToDefault,
-      onSetDatabaseId,
-    } = this.props;
-
+  const renderNativeQueryEditor = () => {
     const legacyQuery = question.legacyQuery();
 
     // Normally, when users open native models,
@@ -324,7 +448,6 @@ class View extends Component {
     return (
       <NativeQueryEditorContainer>
         <NativeQueryEditor
-          {...this.props}
           query={legacyQuery}
           viewHeight={height}
           isOpen={legacyQuery.isEmpty() || isDirty}
@@ -332,21 +455,50 @@ class View extends Component {
           datasetQuery={card && card.dataset_query}
           setParameterValueToDefault={setParameterValueToDefault}
           onSetDatabaseId={onSetDatabaseId}
+          question={question}
+          nativeEditorSelectedText={nativeEditorSelectedText}
+          modalSnippet={modalSnippet}
+          isNativeEditorOpen={isNativeEditorOpen}
+          isRunnable={isRunnable}
+          isRunning={isRunning}
+          isResultDirty={isResultDirty}
+          isShowingDataReference={isShowingDataReference}
+          isShowingTemplateTagsEditor={isShowingTemplateTagsEditor}
+          isShowingSnippetSidebar={isShowingSnippetSidebar}
+          readOnly={readOnly}
+          enableRun={enableRun}
+          canChangeDatabase={canChangeDatabase}
+          cancelQueryOnLeave={cancelQueryOnLeave}
+          hasTopBar={hasTopBar}
+          hasParametersList={hasParametersList}
+          hasEditingSidebar={hasEditingSidebar}
+          sidebarFeatures={sidebarFeatures}
+          resizable={resizable}
+          resizableBoxProps={resizableBoxProps}
+          editorContext={editorContext}
+          handleResize={handleResize}
+          autocompleteResultsFn={autocompleteResultsFn}
+          cardAutocompleteResultsFn={cardAutocompleteResultsFn}
+          setDatasetQuery={setDatasetQuery}
+          runQuestionQuery={runQuestionQuery}
+          setNativeEditorSelectedRange={setNativeEditorSelectedRange}
+          openDataReferenceAtQuestion={openDataReferenceAtQuestion}
+          openSnippetModalWithSelectedText={openSnippetModalWithSelectedText}
+          insertSnippet={insertSnippet}
+          setIsNativeEditorOpen={setIsNativeEditorOpen}
+          setParameterValue={setParameterValue}
+          onOpenModal={onOpenModal}
+          toggleDataReference={toggleDataReference}
+          toggleTemplateTagsEditor={toggleTemplateTagsEditor}
+          toggleSnippetSidebar={toggleSnippetSidebar}
+          cancelQuery={cancelQuery}
+          closeSnippetModal={closeSnippetModal}
         />
       </NativeQueryEditorContainer>
     );
   };
 
-  renderMain = ({ leftSidebar, rightSidebar }) => {
-    const {
-      question,
-      mode,
-      parameters,
-      isLiveResizable,
-      setParameterValue,
-      queryBuilderMode,
-    } = this.props;
-
+  const renderMain = ({ leftSidebar, rightSidebar }) => {
     if (queryBuilderMode === "notebook") {
       // we need to render main only in view mode
       return;
@@ -362,7 +514,7 @@ class View extends Component {
         data-testid="query-builder-main"
       >
         {isNative ? (
-          this.renderNativeQueryEditor()
+          renderNativeQueryEditor()
         ) : (
           <StyledSyncedParametersList
             parameters={parameters}
@@ -373,15 +525,31 @@ class View extends Component {
 
         <StyledDebouncedFrame enabled={!isLiveResizable}>
           <QueryVisualization
-            {...this.props}
+            question={question}
+            isRunning={isRunning}
+            isObjectDetail={isObjectDetail}
+            isResultDirty={isResultDirty}
+            isNativeEditorOpen={isNativeEditorOpen}
+            result={result}
+            maxTableRows={maxTableRows}
+            isDirty={isDirty}
+            queryBuilderMode={queryBuilderMode}
+            navigateToNewCardInsideQB={navigateToNewCardInsideQB}
+            rawSeries={rawSeries}
+            timelineEvents={timelineEvents}
+            selectedTimelineEventIds={selectedTimelineEventIds}
+            onNavigateBack={onNavigateBack}
+            isRunnable={isRunnable}
+            runQuestionQuery={runQuestionQuery}
+            cancelQuery={cancelQuery}
             noHeader
             className={CS.spread}
             mode={queryMode}
           />
         </StyledDebouncedFrame>
         <TimeseriesChrome
-          question={this.props.question}
-          updateQuestion={this.props.updateQuestion}
+          question={question}
+          updateQuestion={updateQuestion}
           className={CS.flexNoShrink}
         />
         <ViewFooter className={CS.flexNoShrink} />
@@ -389,215 +557,183 @@ class View extends Component {
     );
   };
 
-  render() {
-    const {
-      question,
-      result,
-      rawSeries,
-      databases,
-      isShowingNewbModal,
-      isShowingTimelineSidebar,
-      queryBuilderMode,
-      closeQbNewbModal,
-      onDismissToast,
-      onConfirmToast,
-      isShowingToaster,
-      isHeaderVisible,
-      updateQuestion,
-      reportTimezone,
-      readOnly,
-      isDirty,
-      isRunning,
-      isRunnable,
-      isResultDirty,
-      hasVisualizeButton,
-      runQuestionQuery,
-      cancelQuery,
-      setQueryBuilderMode,
-      isShowingQuestionInfoSidebar,
-      isShowingQuestionSettingsSidebar,
-      cancelQuestionChanges,
-      onCreate,
-      onSave,
-      onChangeLocation,
-    } = this.props;
+  // if we don't have a question at all or no databases then we are initializing, so keep it simple
+  if (!question || !databases) {
+    return <LoadingAndErrorWrapper className={CS.fullHeight} loading />;
+  }
 
-    // if we don't have a question at all or no databases then we are initializing, so keep it simple
-    if (!question || !databases) {
-      return <LoadingAndErrorWrapper className={CS.fullHeight} loading />;
-    }
+  const query = question.query();
+  const { isNative } = Lib.queryDisplayInfo(question.query());
 
-    const query = question.query();
-    const { isNative } = Lib.queryDisplayInfo(question.query());
+  const isNewQuestion = !isNative && Lib.sourceTableOrCardId(query) === null;
+  const isModel = question.type() === "model";
+  const isMetric = question.type() === "metric";
 
-    const isNewQuestion = !isNative && Lib.sourceTableOrCardId(query) === null;
-    const isModel = question.type() === "model";
-    const isMetric = question.type() === "metric";
-
-    if ((isModel || isMetric) && queryBuilderMode === "dataset") {
-      return (
-        <>
-          {isModel && <DatasetEditor {...this.props} />}
-          {isMetric && (
-            <MetricEditor
-              question={question}
-              result={result}
-              rawSeries={rawSeries}
-              reportTimezone={reportTimezone}
-              isDirty={isDirty}
-              isResultDirty={isResultDirty}
-              isRunning={isRunning}
-              onChange={updateQuestion}
-              onCreate={async question => {
-                await onCreate(question);
-                setQueryBuilderMode("view");
-              }}
-              onSave={async question => {
-                await onSave(question);
-                setQueryBuilderMode("view");
-              }}
-              onCancel={question => {
-                cancelQuestionChanges();
-                if (question.isSaved()) {
-                  setQueryBuilderMode("view");
-                } else {
-                  onChangeLocation("/");
-                }
-              }}
-              onRunQuery={runQuestionQuery}
-              onCancelQuery={cancelQuery}
-            />
-          )}
-          <QueryModals
-            questionAlerts={this.props.questionAlerts}
-            user={this.props.user}
-            onSave={this.props.onSave}
-            onCreate={this.props.onCreate}
-            updateQuestion={this.props.updateQuestion}
-            modal={this.props.modal}
-            modalContext={this.props.modalContext}
-            card={this.props.card}
-            question={this.props.question}
-            onCloseModal={this.props.onCloseModal}
-            onOpenModal={this.props.onOpenModal}
-            setQueryBuilderMode={this.props.setQueryBuilderMode}
-            originalQuestion={this.props.originalQuestion}
-            onChangeLocation={this.props.onChangeLocation}
-          />
-        </>
-      );
-    }
-
-    const isNotebookContainerOpen =
-      isNewQuestion || queryBuilderMode === "notebook";
-
-    const leftSidebar = this.getLeftSidebar();
-    const rightSidebar = this.getRightSidebar();
-
-    const rightSidebarWidth = match({
-      isShowingTimelineSidebar,
-      isShowingQuestionInfoSidebar,
-      isShowingQuestionSettingsSidebar,
-    })
-      .with({ isShowingTimelineSidebar: true }, () => SIDEBAR_SIZES.TIMELINE)
-      .with({ isShowingQuestionInfoSidebar: true }, () => 0)
-      .with({ isShowingQuestionSettingsSidebar: true }, () => 0)
-      .otherwise(() => SIDEBAR_SIZES.NORMAL);
-
+  if ((isModel || isMetric) && queryBuilderMode === "dataset") {
     return (
-      <div className={CS.fullHeight}>
-        <QueryBuilderViewRoot
-          className={QueryBuilderS.QueryBuilder}
-          data-testid="query-builder-root"
-        >
-          {isHeaderVisible && this.renderHeader()}
-
-          <QueryBuilderContentContainer>
-            {!isNative && (
-              <NotebookContainer
-                isOpen={isNotebookContainerOpen}
-                updateQuestion={updateQuestion}
-                reportTimezone={reportTimezone}
-                readOnly={readOnly}
-                question={question}
-                isDirty={isDirty}
-                isRunnable={isRunnable}
-                isResultDirty={isResultDirty}
-                hasVisualizeButton={hasVisualizeButton}
-                runQuestionQuery={runQuestionQuery}
-                setQueryBuilderMode={setQueryBuilderMode}
-              />
-            )}
-            <ViewSidebar side="left" isOpen={!!leftSidebar}>
-              {leftSidebar}
-            </ViewSidebar>
-            {this.renderMain({ leftSidebar, rightSidebar })}
-            <ViewSidebar
-              side="right"
-              isOpen={!!rightSidebar}
-              width={rightSidebarWidth}
-            >
-              {rightSidebar}
-            </ViewSidebar>
-          </QueryBuilderContentContainer>
-        </QueryBuilderViewRoot>
-
-        {isShowingNewbModal && (
-          <SavedQuestionIntroModal
+      <>
+        {isModel && (
+          <DatasetEditor
             question={question}
-            isShowingNewbModal={isShowingNewbModal}
-            onClose={() => closeQbNewbModal()}
+            isDirty={isDirty}
+            isRunning={isRunning}
+            setQueryBuilderMode={setQueryBuilderMode}
+            setMetadataDiff={setMetadataDiff}
+            onSave={onSave}
+            onCancelCreateNewModel={onCancelCreateNewModel}
+            cancelQuestionChanges={cancelQuestionChanges}
+            handleResize={handleResize}
+            updateQuestion={updateQuestion}
+            runQuestionQuery={runQuestionQuery}
+            onOpenModal={onOpenModal}
+            isShowingTemplateTagsEditor={isShowingTemplateTagsEditor}
+            isShowingDataReference={isShowingDataReference}
+            isShowingSnippetSidebar={isShowingSnippetSidebar}
+            toggleTemplateTagsEditor={toggleTemplateTagsEditor}
+            toggleDataReference={toggleDataReference}
+            toggleSnippetSidebar={toggleSnippetSidebar}
           />
         )}
-
+        {isMetric && (
+          <MetricEditor
+            question={question}
+            result={result}
+            rawSeries={rawSeries}
+            reportTimezone={reportTimezone}
+            isDirty={isDirty}
+            isResultDirty={isResultDirty}
+            isRunning={isRunning}
+            onChange={updateQuestion}
+            onCreate={async question => {
+              await onCreate(question);
+              setQueryBuilderMode("view");
+            }}
+            onSave={async question => {
+              await onSave(question);
+              setQueryBuilderMode("view");
+            }}
+            onCancel={question => {
+              cancelQuestionChanges();
+              if (question.isSaved()) {
+                setQueryBuilderMode("view");
+              } else {
+                onChangeLocation("/");
+              }
+            }}
+            onRunQuery={runQuestionQuery}
+            onCancelQuery={cancelQuery}
+          />
+        )}
         <QueryModals
-          questionAlerts={this.props.questionAlerts}
-          user={this.props.user}
-          onSave={this.props.onSave}
-          onCreate={this.props.onCreate}
-          updateQuestion={this.props.updateQuestion}
-          modal={this.props.modal}
-          modalContext={this.props.modalContext}
-          card={this.props.card}
-          question={this.props.question}
-          onCloseModal={this.props.onCloseModal}
-          onOpenModal={this.props.onOpenModal}
-          setQueryBuilderMode={this.props.setQueryBuilderMode}
-          originalQuestion={this.props.originalQuestion}
-          onChangeLocation={this.props.onChangeLocation}
+          questionAlerts={questionAlerts}
+          user={user}
+          onSave={onSave}
+          onCreate={onCreate}
+          updateQuestion={updateQuestion}
+          modal={modal}
+          modalContext={modalContext}
+          card={card}
+          question={question}
+          onCloseModal={onCloseModal}
+          onOpenModal={onOpenModal}
+          setQueryBuilderMode={setQueryBuilderMode}
+          originalQuestion={originalQuestion}
+          onChangeLocation={onChangeLocation}
         />
-
-        <Toaster
-          message={t`Would you like to be notified when this question is done loading?`}
-          isShown={isShowingToaster}
-          onDismiss={onDismissToast}
-          onConfirm={onConfirmToast}
-          fixed
-        />
-      </div>
+      </>
     );
   }
-}
 
-const mapDispatchToProps = dispatch => ({
-  onSetDatabaseId: id => dispatch(rememberLastUsedDatabase(id)),
-  onUnarchive: async question => {
-    await dispatch(setArchivedQuestion(question, false));
-    await dispatch(Bookmarks.actions.invalidateLists());
-  },
-  onMove: (question, newCollection) =>
-    dispatch(
-      Questions.actions.setCollection({ id: question.id() }, newCollection, {
-        notify: { undo: false },
-      }),
-    ),
-  onDeletePermanently: id => {
-    const deleteAction = Questions.actions.delete({ id });
-    dispatch(deletePermanently(deleteAction));
-  },
-});
+  const isNotebookContainerOpen =
+    isNewQuestion || queryBuilderMode === "notebook";
 
-export default _.compose(
-  ExplicitSize({ refreshMode: "debounceLeading" }),
-  connect(null, mapDispatchToProps),
-)(View);
+  const leftSidebar = getLeftSidebar();
+  const rightSidebar = getRightSidebar();
+
+  const rightSidebarWidth = match({
+    isShowingTimelineSidebar,
+    isShowingQuestionInfoSidebar,
+    isShowingQuestionSettingsSidebar,
+  })
+    .with({ isShowingTimelineSidebar: true }, () => SIDEBAR_SIZES.TIMELINE)
+    .with({ isShowingQuestionInfoSidebar: true }, () => 0)
+    .with({ isShowingQuestionSettingsSidebar: true }, () => 0)
+    .otherwise(() => SIDEBAR_SIZES.NORMAL);
+
+  return (
+    <div className={CS.fullHeight}>
+      <QueryBuilderViewRoot
+        className={QueryBuilderS.QueryBuilder}
+        data-testid="query-builder-root"
+      >
+        {isHeaderVisible && renderHeader()}
+
+        <QueryBuilderContentContainer>
+          {!isNative && (
+            <NotebookContainer
+              isOpen={isNotebookContainerOpen}
+              updateQuestion={updateQuestion}
+              reportTimezone={reportTimezone}
+              readOnly={readOnly}
+              question={question}
+              isDirty={isDirty}
+              isRunnable={isRunnable}
+              isResultDirty={isResultDirty}
+              hasVisualizeButton={hasVisualizeButton}
+              runQuestionQuery={runQuestionQuery}
+              setQueryBuilderMode={setQueryBuilderMode}
+            />
+          )}
+          <ViewSidebar side="left" isOpen={!!leftSidebar}>
+            {leftSidebar}
+          </ViewSidebar>
+          {renderMain({ leftSidebar, rightSidebar })}
+          <ViewSidebar
+            side="right"
+            isOpen={!!rightSidebar}
+            width={rightSidebarWidth}
+          >
+            {rightSidebar}
+          </ViewSidebar>
+        </QueryBuilderContentContainer>
+      </QueryBuilderViewRoot>
+
+      {isShowingNewbModal && (
+        <SavedQuestionIntroModal
+          question={question}
+          isShowingNewbModal={isShowingNewbModal}
+          onClose={() => closeQbNewbModal()}
+        />
+      )}
+
+      <QueryModals
+        questionAlerts={questionAlerts}
+        user={user}
+        onSave={onSave}
+        onCreate={onCreate}
+        updateQuestion={updateQuestion}
+        modal={modal}
+        modalContext={modalContext}
+        card={card}
+        question={question}
+        onCloseModal={onCloseModal}
+        onOpenModal={onOpenModal}
+        setQueryBuilderMode={setQueryBuilderMode}
+        originalQuestion={originalQuestion}
+        onChangeLocation={onChangeLocation}
+      />
+
+      <Toaster
+        message={t`Would you like to be notified when this question is done loading?`}
+        isShown={isShowingToaster}
+        onDismiss={onDismissToast}
+        onConfirm={onConfirmToast}
+        fixed
+      />
+    </div>
+  );
+};
+
+export default _.compose(ExplicitSize({ refreshMode: "debounceLeading" }))(
+  View,
+);

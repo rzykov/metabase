@@ -19,18 +19,26 @@ import Warnings from "./Warnings";
 
 const SLOW_MESSAGE_TIMEOUT = 4000;
 
-export default function QueryVisualization(props) {
-  const {
-    className,
-    question,
-    isRunning,
-    isObjectDetail,
-    isResultDirty,
-    isNativeEditorOpen,
-    result,
-    maxTableRows = HARD_ROW_LIMIT,
-  } = props;
-
+export default function QueryVisualization({
+  className,
+  question,
+  isRunning,
+  isObjectDetail,
+  isResultDirty,
+  isNativeEditorOpen,
+  result,
+  maxTableRows = HARD_ROW_LIMIT,
+  isDirty,
+  queryBuilderMode,
+  navigateToNewCardInsideQB,
+  rawSeries,
+  timelineEvents,
+  selectedTimelineEventIds,
+  onNavigateBack,
+  isRunnable,
+  runQuestionQuery,
+  cancelQuery,
+}) {
   const canRun = Lib.canRun(question.query(), question.type());
   const [warnings, setWarnings] = useState([]);
 
@@ -42,7 +50,12 @@ export default function QueryVisualization(props) {
         <VisualizationRunningState className={cx(CS.spread, CS.z2)} />
       ) : null}
       <VisualizationDirtyState
-        {...props}
+        result={result}
+        isRunnable={isRunnable}
+        isRunning={isRunning}
+        isResultDirty={isResultDirty}
+        runQuestionQuery={runQuestionQuery}
+        cancelQuery={cancelQuery}
         hidden={!canRun || !isResultDirty || isRunning || isNativeEditorOpen}
         className={cx(CS.spread, CS.z2)}
       />
@@ -74,9 +87,18 @@ export default function QueryVisualization(props) {
           />
         ) : result?.data ? (
           <VisualizationResult
-            {...props}
+            question={question}
+            isDirty={isDirty}
+            queryBuilderMode={queryBuilderMode}
+            navigateToNewCardInsideQB={navigateToNewCardInsideQB}
+            result={result}
+            rawSeries={rawSeries}
+            timelineEvents={timelineEvents}
+            selectedTimelineEventIds={selectedTimelineEventIds}
+            onNavigateBack={onNavigateBack}
+            className={className}
+            isRunning={isRunning}
             maxTableRows={maxTableRows}
-            className={CS.spread}
             onUpdateWarnings={setWarnings}
           />
         ) : !isRunning ? (
