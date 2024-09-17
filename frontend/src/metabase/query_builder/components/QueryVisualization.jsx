@@ -38,6 +38,19 @@ export default function QueryVisualization({
   isRunnable,
   runQuestionQuery,
   cancelQuery,
+  noHeader,
+  mode,
+  handleVisualizationClick,
+  onOpenTimelines,
+  selectTimelineEvents,
+  deselectTimelineEvents,
+  onOpenChartSettings,
+  onUpdateVisualizationSettings,
+  isShowingDetailsOnlyColumns,
+  hasMetadataPopovers,
+  tableHeaderHeight,
+  scrollToColumn,
+  renderTableHeaderWrapper,
 }) {
   const canRun = Lib.canRun(question.query(), question.type());
   const [warnings, setWarnings] = useState([]);
@@ -58,6 +71,7 @@ export default function QueryVisualization({
         cancelQuery={cancelQuery}
         hidden={!canRun || !isResultDirty || isRunning || isNativeEditorOpen}
         className={cx(CS.spread, CS.z2)}
+        noHeader={noHeader}
       />
       {!isObjectDetail && (
         <Warnings
@@ -96,10 +110,22 @@ export default function QueryVisualization({
             timelineEvents={timelineEvents}
             selectedTimelineEventIds={selectedTimelineEventIds}
             onNavigateBack={onNavigateBack}
-            className={className}
+            className={CS.spread}
             isRunning={isRunning}
-            maxTableRows={maxTableRows}
+            handleVisualizationClick={handleVisualizationClick}
+            onOpenTimelines={onOpenTimelines}
+            onSelectTimelineEvents={selectTimelineEvents}
+            onDeselectTimelineEvents={deselectTimelineEvents}
+            onOpenChartSettings={onOpenChartSettings}
             onUpdateWarnings={setWarnings}
+            onUpdateVisualizationSettings={onUpdateVisualizationSettings}
+            isShowingDetailsOnlyColumns={isShowingDetailsOnlyColumns}
+            hasMetadataPopovers={hasMetadataPopovers}
+            tableHeaderHeight={tableHeaderHeight}
+            scrollToColumn={scrollToColumn}
+            renderTableHeaderWrapper={renderTableHeaderWrapper}
+            mode={mode}
+            maxTableRows={maxTableRows}
           />
         ) : !isRunning ? (
           <VisualizationEmptyState className={CS.spread} />
