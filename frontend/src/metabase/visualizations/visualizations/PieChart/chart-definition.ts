@@ -32,6 +32,7 @@ import type {
   VisualizationDefinition,
   VisualizationSettingsDefinitions,
 } from "metabase/visualizations/types";
+import { isDimension, isMetric } from "metabase-lib/v1/types/utils/isa";
 import type { RawSeries, Series } from "metabase-types/api";
 
 import { DimensionsWidget } from "./DimensionsWidget";
@@ -43,7 +44,17 @@ export const PIE_CHART_DEFINITION: VisualizationDefinition = {
   iconName: "pie",
   minSize: getMinSize("pie"),
   defaultSize: getDefaultSize("pie"),
-  isSensible: ({ cols }) => cols.length === 2,
+  isSensible: ({ cols, rows }) => {
+    const numDimensions = cols.filter(isDimension).length;
+    const numMetrics = cols.filter(isMetric).length;
+
+    return (
+      rows.length >= 2 &&
+      cols.length >= 2 &&
+      numDimensions >= 1 &&
+      numMetrics >= 1
+    );
+  },
   checkRenderable: (
     [
       {
