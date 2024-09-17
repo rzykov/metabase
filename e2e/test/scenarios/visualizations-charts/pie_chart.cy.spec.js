@@ -1,7 +1,9 @@
 import { SAMPLE_DB_ID } from "e2e/support/cypress_data";
 import { SAMPLE_DATABASE } from "e2e/support/cypress_sample_database";
 import {
+  assertEChartsTooltip,
   chartPathWithFillColor,
+  echartsContainer,
   getDraggableElements,
   getNotebookStep,
   leftSidebar,
@@ -313,6 +315,150 @@ describe("scenarios > visualizations > pie chart", () => {
       ["Doohickey", "Gadget", "Gizmo", "Widget"],
       ["Affiliate", "Facebook", "Google", "Organic", "Twitter"],
     );
+  });
+
+  it("should handle hover and click actions correctly", () => {
+    visitQuestionAdhoc({
+      dataset_query: twoRingQuery,
+      display: "pie",
+      visualization_settings: {
+        "pie.slice_threshold": 0,
+      },
+    });
+
+    // TODO try removing after updating isSensible
+    cy.findByTestId("viz-type-button").click();
+    cy.findByTestId("Pie-button").click();
+
+    ensurePieChartRendered(
+      [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
+      ["Doohickey", "Gadget", "Gizmo", "Widget"],
+    );
+
+    echartsContainer().within(() => {
+      cy.findByText("Saturday").as("saturdaySlice").trigger("mousemove");
+    });
+
+    assertEChartsTooltip({
+      header: "Created At",
+      rows: [
+        {
+          color: "#51528D",
+          name: "Saturday",
+          value: "2,747",
+        },
+        {
+          color: "#ED8535",
+          name: "Thursday",
+          value: "2,698",
+        },
+        {
+          color: "#E75454",
+          name: "Tuesday",
+          value: "2,695",
+        },
+        {
+          color: "#689636",
+          name: "Sunday",
+          value: "2,671",
+        },
+        {
+          color: "#8A5EB0",
+          name: "Monday",
+          value: "2,664",
+        },
+        {
+          color: "#69C8C8",
+          name: "Friday",
+          value: "2,662",
+        },
+        {
+          color: "#F7C41F",
+          name: "Wednesday",
+          value: "2,623",
+        },
+      ],
+    });
+
+    cy.get("@saturdaySlice").click({ force: true });
+
+    popover().within(() => {
+      cy.findByText("=").click();
+    });
+
+    cy.findByTestId("qb-filters-panel").within(() => {
+      cy.findByText("Count is equal to 2747").should("be.visible");
+    });
+
+    cy.go("back");
+
+    // TODO try removing after updating isSensible
+    cy.findByTestId("viz-type-button").click();
+    cy.findByTestId("Pie-button").click();
+
+    ensurePieChartRendered(
+      [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
+      ["Doohickey", "Gadget", "Gizmo", "Widget"],
+    );
+
+    echartsContainer().within(() => {
+      cy.findAllByText("Doohickey")
+        .first()
+        .as("doohickeySlice")
+        .trigger("mousemove");
+    });
+
+    assertEChartsTooltip({
+      header: "Saturday",
+      rows: [
+        {
+          color: "#7172AD",
+          name: "Doohickey",
+          value: "606",
+        },
+        {
+          color: "#7172AD",
+          name: "Gadget",
+          value: "740",
+        },
+        {
+          color: "#7172AD",
+          name: "Gizmo",
+          value: "640",
+        },
+        {
+          color: "#7172AD",
+          name: "Widget",
+          value: "761",
+        },
+      ],
+    });
+
+    cy.get("@doohickeySlice").click({ force: true });
+
+    popover().within(() => {
+      cy.findByText("=").click();
+    });
+
+    cy.findByTestId("qb-filters-panel").within(() => {
+      cy.findByText("Count is equal to 606").should("be.visible");
+    });
   });
 });
 
