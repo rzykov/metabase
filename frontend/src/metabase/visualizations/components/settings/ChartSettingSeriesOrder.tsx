@@ -34,6 +34,7 @@ interface ChartSettingSeriesOrderProps {
   hasEditSettings: boolean;
   onChangeSeriesColor: (seriesKey: string, color: string) => void;
   onSortEnd: (newItems: SortableItem[]) => void;
+  includeLightAndDarkColors?: boolean;
 }
 
 export const ChartSettingSeriesOrder = ({
@@ -43,6 +44,7 @@ export const ChartSettingSeriesOrder = ({
   hasEditSettings = true,
   onChangeSeriesColor,
   onSortEnd,
+  includeLightAndDarkColors = true,
 }: ChartSettingSeriesOrderProps) => {
   const [isSeriesPickerVisible, setSeriesPickerVisible] = useState(false);
 
@@ -128,6 +130,7 @@ export const ChartSettingSeriesOrder = ({
             onColorChange={handleColorChange}
             getId={getId}
             removeIcon="close"
+            includeLightAndDarkColors={includeLightAndDarkColors}
           />
           {canAddSeries && !isSeriesPickerVisible && (
             <Button

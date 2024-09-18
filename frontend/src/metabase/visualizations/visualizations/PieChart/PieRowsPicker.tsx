@@ -9,11 +9,13 @@ import type { RawSeries } from "metabase-types/api";
 export function PieRowsPicker({
   rawSeries,
   settings,
+  numRings,
   onChangeSettings,
   onShowWidget,
 }: {
   rawSeries: RawSeries;
   settings: ComputedVisualizationSettings;
+  numRings: number;
   onChangeSettings: (newSettings: ComputedVisualizationSettings) => void;
   onShowWidget: (widget: any, ref: any) => void;
 }) {
@@ -47,6 +49,7 @@ export function PieRowsPicker({
       onChange={rows => onChangeSettings({ "pie.rows": rows as PieRow[] })}
       onShowWidget={onShowWidget}
       hasEditSettings
+      includeLightAndDarkColors={numRings === 1}
     />
   );
 }

@@ -26,7 +26,7 @@ function getAccentNumberFromHex(hexColor: string) {
     const accentNumber = checkNumber(
       Number(key.slice(ACCENT_KEY_PREFIX.length, ACCENT_KEY_PREFIX.length + 1)),
     );
-    const hex = hexGetter(colors); // TODO make sure this works with white labeling
+    const hex = hexGetter(colors);
 
     hexToAccentNumber.set(hex, accentNumber);
   }

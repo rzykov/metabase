@@ -173,6 +173,7 @@ export function DimensionsWidget({
                   settings={settings}
                   onChangeSettings={onChangeSettings}
                   onShowWidget={onShowWidget}
+                  numRings={dimensions.filter(d => d != null).length}
                 />
               )}
             </>
