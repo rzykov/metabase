@@ -1,10 +1,11 @@
 import { checkNotNull } from "metabase/lib/types";
 
+import { OPTION_NAME_SEPERATOR } from "../constants";
 import type { PieChartModel, SliceTree, SliceTreeNode } from "../model/types";
 import type { EChartsSunburstSeriesMouseEvent } from "../types";
 
 export const getSliceKeyPath = (event: EChartsSunburstSeriesMouseEvent) =>
-  event.treePathInfo.slice(1).map(info => info.name);
+  event?.name?.split(OPTION_NAME_SEPERATOR) ?? [];
 
 export function getSliceTreeNodesFromPath(
   sliceTree: SliceTree,

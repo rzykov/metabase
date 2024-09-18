@@ -9,7 +9,7 @@ import type {
   RenderingContext,
 } from "metabase/visualizations/types";
 
-import { DIMENSIONS, TOTAL_TEXT } from "./constants";
+import { DIMENSIONS, OPTION_NAME_SEPERATOR, TOTAL_TEXT } from "./constants";
 import type { PieChartFormatters } from "./format";
 import type { PieChartModel, SliceTreeNode } from "./model/types";
 import { getInnerRingSlices, getSliceTreeNodesFromPath } from "./util";
@@ -243,6 +243,7 @@ export function getPieChartOption(
   function getSeriesDataFromSlices(
     slices: SliceTreeNode[],
     ring = 1,
+    parentName: string | null = null,
   ): SunburstSeriesOption["data"] {
     if (slices.length === 0) {
       return [];
@@ -281,12 +282,21 @@ export function getPieChartOption(
         numRings,
       );
 
+      const name =
+        parentName != null
+          ? `${parentName}${OPTION_NAME_SEPERATOR}${s.key}`
+          : s.key;
+
       return {
         children: !s.isOther
-          ? getSeriesDataFromSlices(Array(...s.children.values()), ring + 1)
+          ? getSeriesDataFromSlices(
+              Array(...s.children.values()),
+              ring + 1,
+              name,
+            )
           : undefined,
         value: s.value,
-        name: s.key,
+        name,
         itemStyle: { color: s.color, borderWidth: ringBorderWidth },
         label: {
           color: labelColor,

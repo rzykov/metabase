@@ -1,5 +1,7 @@
 import { t } from "ttag";
 
+import { NULL_CHAR } from "../cartesian/constants/dataset";
+
 export const DIMENSIONS = {
   maxSideLength: 550,
   padding: {
@@ -36,3 +38,5 @@ export const OTHER_SLICE_MIN_PERCENTAGE = 0.005;
 export const OTHER_SLICE_KEY = t`Other`;
 
 export const TOTAL_TEXT = t`Total`.toUpperCase();
+
+export const OPTION_NAME_SEPERATOR = `–${NULL_CHAR}–`;
