@@ -113,6 +113,7 @@ export function PieChart(props: VisualizationProps) {
     props.onHoverChange(
       hoverData && {
         ...hoverData,
+        pieLegendHoverIndex: hoverData.index,
       },
     );
 

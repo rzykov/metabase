@@ -178,16 +178,20 @@ export function useChartEvents(
     visualizationIsClickable,
     onVisualizationClick,
   } = props;
-  const hoveredIndex = props.hovered?.index;
+  // We use `pieLegendHoverIndex` instead of `hovered.index` because we only
+  // want to manually highlight and downplay when the user hovers over the
+  // legend. If the user hovers over the chart, echarts will handle highlighting
+  // the chart itself.
+  const legendHoverIndex = props.hovered?.pieLegendHoverIndex;
   const chart = chartRef?.current;
 
   useEffect(
     function higlightChartOnLegendHover() {
-      if (chart == null || hoveredIndex == null) {
+      if (chart == null || legendHoverIndex == null) {
         return;
       }
 
-      const name = String(getInnerRingSlices(chartModel)[hoveredIndex].key);
+      const name = String(getInnerRingSlices(chartModel)[legendHoverIndex].key);
 
       chart.dispatchAction({
         type: "highlight",
@@ -203,7 +207,7 @@ export function useChartEvents(
         });
       };
     },
-    [chart, chartModel, hoveredIndex],
+    [chart, chartModel, legendHoverIndex],
   );
 
   useClickedStateTooltipSync(chartRef.current, props.clicked);
