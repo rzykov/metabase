@@ -199,7 +199,6 @@ export function getPieChartModel(
     .filter(slice => isNonPositive || slice.value > 0)
     .partition(slice => slice != null && !slice.isOther)
     .value();
-  //
 
   // We don't show the grey other slice if there isn't more than one slice to
   // group into it
@@ -462,7 +461,7 @@ export function getPieChartModel(
         ), // TODO use common func for Array(...node.values())
     );
   }
-  computeSliceAngles(sliceTreeNodes);
+  computeSliceAngles(Array(...sliceTree.values()));
 
   // If there are no non-zero slices, we'll display a single "other" slice
   if (sliceTree.size === 0) {
