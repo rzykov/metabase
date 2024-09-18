@@ -189,12 +189,14 @@ export function DimensionsWidget({
           </DragOverlay>
         </SortableContext>
       </DndContext>
-      {dimensions.length < 3 && dimensions[dimensions.length - 1] != null && (
-        <Button
-          variant="subtle"
-          onClick={() => setDimensions([...dimensions, undefined])}
-        >{t`Add Ring`}</Button>
-      )}
+      {dimensions.length < 3 &&
+        dimensions[dimensions.length - 1] != null &&
+        getFilteredOptions(dimensions.length).length > 0 && (
+          <Button
+            variant="subtle"
+            onClick={() => setDimensions([...dimensions, undefined])}
+          >{t`Add Ring`}</Button>
+        )}
     </>
   );
 }
