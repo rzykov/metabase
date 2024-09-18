@@ -20,8 +20,7 @@ export interface PieColumnDescriptors {
 }
 
 export type SliceTreeNode = {
-  // TODO just make key a string, raw value only need to create formatted name
-  key: string | number; // dimension value, used to lookup slices
+  key: string;
   name: string; // display name, already formatted
   value: number; // size of the slice used for rendering
   displayValue: number; // real metric value of the slice displayed in tooltip or total graphic
