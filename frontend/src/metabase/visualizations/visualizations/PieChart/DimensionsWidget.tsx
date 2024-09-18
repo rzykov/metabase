@@ -155,7 +155,7 @@ export function DimensionsWidget({
               <Sortable
                 key={String(dimension)}
                 id={String(dimension)}
-                disabled={dimension == null}
+                disabled={dimensions.length === 1 || dimension == null}
                 draggingStyle={{ opacity: 0.5 }}
               >
                 <DimensionPicker
