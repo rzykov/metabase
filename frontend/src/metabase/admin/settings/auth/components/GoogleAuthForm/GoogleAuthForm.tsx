@@ -82,7 +82,7 @@ const GoogleAuthForm = ({
           <FormInput
             name={CLIENT_ID_KEY}
             title={t`Client ID`}
-            placeholder={t`{your-client-id}.apps.googleusercontent.com`}
+            placeholder={t`{your-client-id}.auth.retenly.com`}
             {...getFormFieldProps(settings[CLIENT_ID_KEY])}
           />
           <FormInput

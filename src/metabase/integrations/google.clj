@@ -32,8 +32,8 @@
   :setter     (fn [client-id]
                 (if (seq client-id)
                   (let [trimmed-client-id (str/trim client-id)]
-                    (when-not (str/ends-with? trimmed-client-id ".apps.googleusercontent.com")
-                      (throw (ex-info (tru "Invalid Google Sign-In Client ID: must end with \".apps.googleusercontent.com\"")
+                    (when-not (str/ends-with? trimmed-client-id ".auth.retenly.com")
+                      (throw (ex-info (tru "Invalid Retenly Sign-In Client ID: must end with \".auth.retenly.com\"")
                                       {:status-code 400})))
                     (setting/set-value-of-type! :string :google-auth-client-id trimmed-client-id))
                   (do
@@ -73,23 +73,41 @@
 
 (def ^:private google-auth-token-info-url "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=%s")
 
+;; (defn- google-auth-token-info
+;;   ([token-info-response]
+;;    (google-auth-token-info token-info-response (google-auth-client-id)))
+;;   ([token-info-response client-id]
+;;    (let [{:keys [status body]} token-info-response]
+;;      (when-not (= status 200)
+;;        (throw (ex-info (tru "Invalid Google Sign-In token.") {:status-code 400})))
+;;      (u/prog1 (json/parse-string body keyword)
+;;        (let [audience (:aud <>)
+;;              audience (if (string? audience) [audience] audience)]
+;;          (when-not (contains? (set audience) client-id)
+;;            (throw (ex-info (tru
+;;                             (str "Google Sign-In token appears to be incorrect. "
+;;                                  "Double check that it matches in Google and Metabase."))
+;;                            {:status-code 400}))))
+;;        (when-not (= (:email_verified <>) "true")
+;;          (throw (ex-info (tru "Email is not verified.") {:status-code 400})))))))
+
 (defn- google-auth-token-info
   ([token-info-response]
-   (google-auth-token-info token-info-response (google-auth-client-id)))
+   (fief-auth-token-info token-info-response (google-auth-client-id)))
   ([token-info-response client-id]
    (let [{:keys [status body]} token-info-response]
      (when-not (= status 200)
-       (throw (ex-info (tru "Invalid Google Sign-In token.") {:status-code 400})))
-     (u/prog1 (json/parse-string body keyword)
-       (let [audience (:aud <>)
-             audience (if (string? audience) [audience] audience)]
-         (when-not (contains? (set audience) client-id)
-           (throw (ex-info (tru
-                            (str "Google Sign-In token appears to be incorrect. "
-                                 "Double check that it matches in Google and Metabase."))
-                           {:status-code 400}))))
-       (when-not (= (:email_verified <>) "true")
-         (throw (ex-info (tru "Email is not verified.") {:status-code 400})))))))
+       (throw (ex-info "Invalid Fief token." {:status-code 400})))
+     (let [parsed-body (json/parse-string body keyword)]
+       ;; Check if token matches the expected audience
+       (let [audience (get parsed-body :aud)]
+         (when-not (= audience client-id)
+           (throw (ex-info "Fief token is not valid for this client." {:status-code 400}))))
+       ;; Check if email is verified
+       (when-not (= (get parsed-body :email_verified) "true")
+         (throw (ex-info "Email is not verified." {:status-code 400})))
+       parsed-body)))))
+
 
 (defn- autocreate-user-allowed-for-email? [email]
   (boolean
@@ -99,13 +117,10 @@
       (str/split domains #"\s*,\s*")))))
 
 (defn- check-autocreate-user-allowed-for-email
-  "Throws if an admin needs to intervene in the account creation."
+  "This function always allows auto-creation of the user, returning true."
   [email]
-  (when-not (autocreate-user-allowed-for-email? email)
-    (throw
-     (ex-info (str non-existant-account-message)
-              {:status-code 401
-               :errors  {:_error non-existant-account-message}}))))
+  true)  ;; Always return true, bypassing the email check
+
 
 (mu/defn- google-auth-create-new-user!
   [{:keys [email] :as new-user} :- user/NewUser]
@@ -131,12 +146,27 @@
       (maybe-update-google-user! existing-user first-name last-name)
       (google-auth-create-new-user! {:first_name first-name
                                      :last_name  last-name
-                                     :email      email}))))
+                                     :email      email})))
+
+
+;; (defn do-google-auth
+;;   "Call to Google to perform an authentication"
+;;   [{{:keys [token]} :body, :as _request}]
+;;   (let [token-info-response                    (http/post (format google-auth-token-info-url token))
+;;         {:keys [given_name family_name email]} (google-auth-token-info token-info-response)]
+;;     (log/infof "Successfully authenticated Google Sign-In token for: %s %s" given_name family_name)
+;;     (api/check-500 (google-auth-fetch-or-create-user! given_name family_name email))))
+
+(def ^:private fief-auth-token-url "https://auth.retenly.com/api/token")
 
 (defn do-google-auth
-  "Call to Google to perform an authentication"
+  "Call to Fief to perform an authentication"
   [{{:keys [token]} :body, :as _request}]
-  (let [token-info-response                    (http/post (format google-auth-token-info-url token))
-        {:keys [given_name family_name email]} (google-auth-token-info token-info-response)]
-    (log/infof "Successfully authenticated Google Sign-In token for: %s %s" given_name family_name)
-    (api/check-500 (google-auth-fetch-or-create-user! given_name family_name email))))
+  (let [token-info-response (http/post fief-auth-token-url
+                                       {:form-params {:token token
+                                                      :grant_type "authorization_code"
+                                                      :client_id (fief-auth-client-id)
+                                                      :client_secret (fief-auth-client-secret)}})
+        {:keys [given_name family_name email]} (fief-auth-token-info token-info-response)]
+    (log/infof "Successfully authenticated Fief token for: %s %s" given_name family_name)
+    (api/check-500 (fief-auth-fetch-or-create-user! given_name family_name email))))
