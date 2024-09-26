@@ -69,26 +69,44 @@ export const login = createAsyncThunk(
   },
 );
 
+
 interface LoginGooglePayload {
-  credential: string;
+  accessToken: string;
   redirectUrl?: string;
 }
 
 export const LOGIN_GOOGLE = "metabase/auth/LOGIN_GOOGLE";
 export const loginGoogle = createAsyncThunk(
   LOGIN_GOOGLE,
-  async ({ credential }: LoginGooglePayload, { dispatch, rejectWithValue }) => {
+  async ({ accessToken }: LoginGooglePayload, { dispatch, rejectWithValue }) => {
+    // eslint-disable-next-line no-console
+    console.log("Starting Google login with credentials:", accessToken); // Log start
+
     try {
-      await SessionApi.createWithGoogleAuth({ token: credential });
+      console.log("Attempting to create session with Google Auth...");
+      await SessionApi.createWithGoogleAuth({ token: accessToken });
+
+      console.log("Session created successfully. Refreshing session...");
       await dispatch(refreshSession()).unwrap();
+
       if (!isSmallScreen()) {
+        console.log("Not a small screen. Opening navbar...");
         dispatch(openNavbar());
+      } else {
+        console.log("Small screen detected. Navbar not opened.");
       }
+
+      console.log("Google login flow completed successfully.");
     } catch (error) {
+      console.error("Google login failed with error:", error); // Log error
       return rejectWithValue(error);
     }
   },
 );
+
+
+
+
 
 export const LOGOUT = "metabase/auth/LOGOUT";
 export const logout = createAsyncThunk(

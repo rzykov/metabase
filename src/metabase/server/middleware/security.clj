@@ -64,7 +64,7 @@
                   :script-src   (concat
                                  ["'self'"
                                   "https://maps.google.com"
-                                  "https://accounts.google.com"
+                                  "https://auth.retenly.com"
                                   (when (public-settings/anon-tracking-enabled)
                                     "https://www.google-analytics.com")
                                    ;; for webpack hot reloading
@@ -81,7 +81,7 @@
                                  (when-not config/is-dev?
                                    (map (partial format "'sha256-%s'") inline-js-hashes)))
                   :child-src    ["'self'"
-                                 "https://accounts.google.com"]
+                                 "https://auth.retenly.com"]
                   :style-src    ["'self'"
                                  ;; See [[generate-nonce]]
                                  (when nonce
@@ -92,13 +92,13 @@
                                  ;; CLJS REPL
                                  (when config/is-dev?
                                    "http://localhost:9630")
-                                 "https://accounts.google.com"]
+                                 "https://auth.retenly.com"]
                   :font-src     ["*"]
                   :img-src      ["*"
                                  "'self' data:"]
                   :connect-src  ["'self'"
                                  ;; Google Identity Services
-                                 "https://accounts.google.com"
+                                 "https://auth.retenly.com"
                                  ;; MailChimp. So people can sign up for the Metabase mailing list in the sign up process
                                  "metabase.us10.list-manage.com"
                                  ;; Snowplow analytics
