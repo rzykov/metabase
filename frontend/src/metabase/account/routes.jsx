@@ -10,16 +10,16 @@ import UserPasswordApp from "./password/containers/UserPasswordApp";
 import UserProfileApp from "./profile/containers/UserProfileApp";
 
 const getRoutes = (store, IsAuthenticated) => {
-  return (
-    <Route path="/account" component={IsAuthenticated}>
-      <Route title={t`Account settings`} component={AccountApp}>
-        <IndexRedirect to="profile" />
-        <Route path="profile" component={UserProfileApp} />
-        <Route path="password" component={UserPasswordApp} />
-        <Route path="login-history" component={LoginHistoryApp} />
-        {getNotificationRoutes()}
-      </Route>
-    </Route>
+  return ( ""
+    // <Route path="/account" component={IsAuthenticated}>
+    //   <Route title={t`Account settings`} component={AccountApp}>
+    //     <IndexRedirect to="profile" />
+    //     <Route path="profile" component={UserProfileApp} />
+    //     <Route path="password" component={UserPasswordApp} />
+    //     <Route path="login-history" component={LoginHistoryApp} />
+    //     {getNotificationRoutes()}
+    //   </Route>
+    // </Route>
   );
 };
 

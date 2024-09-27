@@ -7,7 +7,7 @@ import ErrorBoundary from "metabase/ErrorBoundary";
 import { useDispatch, useSelector } from "metabase/lib/redux";
 import * as Urls from "metabase/lib/urls";
 
-import { loginGoogle } from "../../actions";
+import { loginFief } from "../../actions";
 import { getGoogleClientId, getSiteLocale } from "../../selectors";
 
 import {
@@ -36,7 +36,7 @@ export const GoogleButton = ({ redirectUrl, isCard }: GoogleButtonProps) => {
     async ({ credential = "" }: CredentialResponse) => {
       try {
         setErrors([]);
-        await dispatch(loginGoogle({ credential, redirectUrl })).unwrap();
+        await dispatch(loginFief({ credential, redirectUrl })).unwrap();
       } catch (error) {
         setErrors(getErrors(error));
       }

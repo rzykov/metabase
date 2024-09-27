@@ -1,197 +1,165 @@
-// FiefButton.tsx
-
-import React, { useCallback, useEffect, useState, ReactNode } from "react";
+import React, { useEffect, useState } from "react";
 import { t } from "ttag";
-import { FiefAuthProvider, useFiefAuth } from "@fief/fief/react";
-import { useDispatch } from "metabase/lib/redux";
-import { loginGoogle } from "../../actions"; // Use loginGoogle as it was
+import { FiefAuthProvider, useFiefAuth, useFiefTokenInfo } from "@fief/fief/react";
+import { useDispatch, useSelector } from "metabase/lib/redux";
+import { loginFief } from "../../actions";
+import { getFiefClientId, getFiefURL } from "../../selectors";
+
 import {
   GoogleButtonRoot,
   AuthErrorRoot,
   AuthError,
   TextLink,
-} from "./GoogleButton.styled"; // Styling imports
+} from "./GoogleButton.styled";
+
+import styled from "@emotion/styled";
+
+export const ButtonLink = styled.button`
+  cursor: pointer;
+  color: var(--mb-color-text-dark);
+  background-color: var(--mb-color-background-light); /* Add background */
+  border: 2px solid var(--mb-color-border); /* Add border */
+  border-radius: 8px; /* Optional: Add rounded corners */
+  padding: 12px 24px;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+
+  &:hover {
+    color: var(--mb-color-brand);
+    background-color: var(--mb-color-background-hover); /* Change background on hover */
+    border-color: var(--mb-color-border-hover); /* Change border on hover */
+  }
+`;
+
 
 interface FiefButtonProps {
   redirectUrl?: string;
   isCard?: boolean;
-  onSuccess?: (accessToken: string, userinfo: any) => void;
+  onSuccess?: (accessToken: string) => void;
   onError?: (error: Error) => void;
 }
 
-interface CustomFiefAuthProviderProps {
-  baseURL: string;
-  clientId: string;
-  onSuccess: (accessToken: string, userinfo: any) => void;
-  onError?: (error: Error) => void;
-  redirectUrl: string;
-  children: (props: { handleLoginRedirect: () => Promise<void> }) => ReactNode;
-}
-
-// Wrapper to add support for onSuccess and onError
-const CustomFiefAuthProvider: React.FC<CustomFiefAuthProviderProps> = ({
-  baseURL,
-  clientId,
+export const FiefButton: React.FC<FiefButtonProps> = ({
+  redirectUrl = `${window.location.origin}`,
+  isCard = true,
   onSuccess,
   onError,
-  redirectUrl,
-  children,
 }) => {
+  const clientId = useSelector(getFiefClientId);
+  const fiefUrl = useSelector(getFiefURL);
+  const [errors, setErrors] = useState<string[]>([]);
+  const dispatch = useDispatch();
+
   return (
-    <FiefAuthProvider baseURL={baseURL} clientId={clientId}>
-      <InnerFiefComponent
+    <FiefAuthProvider baseURL={fiefUrl} clientId={clientId}>
+      <FiefButtonContent
+        redirectUrl={redirectUrl}
+        isCard={isCard}
         onSuccess={onSuccess}
         onError={onError}
-        redirectUrl={redirectUrl}
-        children={children}
+        dispatch={dispatch}
+        errors={errors}
+        setErrors={setErrors}
       />
     </FiefAuthProvider>
   );
 };
 
-const InnerFiefComponent: React.FC<{
-  onSuccess: (accessToken: string, userinfo: any) => void;
-  onError?: (error: Error) => void;
+interface FiefButtonContentProps {
   redirectUrl: string;
-  children: (props: { handleLoginRedirect: () => Promise<void> }) => ReactNode;
-}> = ({ onSuccess, onError, redirectUrl, children }) => {
-  const fiefAuth = useFiefAuth();
-  const [error, setError] = useState<Error | null>(null);
-  const [isAuthCallbackProcessed, setIsAuthCallbackProcessed] = useState(false);
+  isCard: boolean;
+  onSuccess?: (accessToken: string) => void;
+  onError?: (error: Error) => void;
+  dispatch: any;
+  errors: string[];
+  setErrors: React.Dispatch<React.SetStateAction<string[]>>;
+}
 
-  const handleLoginRedirect = useCallback(async () => {
+const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
+  redirectUrl,
+  isCard,
+  onSuccess,
+  onError,
+  dispatch,
+  errors,
+  setErrors,
+}) => {
+  const fiefAuth = useFiefAuth();
+  const tokenInfo = useFiefTokenInfo(); // Use the hook to get token info
+
+  const handleLoginRedirect = async () => {
     try {
       console.log("Redirecting to Fief login...");
-      // Line left unchanged as per your request
       await fiefAuth.redirectToLogin(`${window.location.origin}/auth/login`);
     } catch (err) {
-      setError(err as Error);
-      if (onError) onError(err as Error);
-    }
-  }, [fiefAuth, onError]);
-
- useEffect(() => {
-  console.log("useEffect triggered");
-  console.log("window.location.search:", window.location.search);
-  console.log("Contains 'code=':", window.location.search.includes("code="));
-  console.log("isAuthCallbackProcessed:", isAuthCallbackProcessed);
-
-  const handleAuthCallback = async () => {
-    if (isAuthCallbackProcessed) {
-      console.log("Auth callback already processed. Exiting.");
-      return;
-    }
-
-    console.log("handleAuthCallback started");
-
-    try {
-      await fiefAuth.authCallback(`${window.location.origin}/auth/login`);
-      console.log("authCallback completed");
-      setIsAuthCallbackProcessed(true);
-
-      const tokenInfo = fiefAuth.getTokenInfo();
-      const userinfo = fiefAuth.getUserinfo();
-
-      console.log("Token Info:", tokenInfo);
-      console.log("User Info:", userinfo);
-
-      if (tokenInfo && userinfo) {
-        onSuccess(tokenInfo.access_token, userinfo);
-      } else {
-        console.error("Failed to retrieve token info or user info.");
-        throw new Error("Failed to retrieve token info or user info.");
-      }
-    } catch (err) {
-      console.error("Error during authCallback:", err);
-      setError(err as Error);
+      console.error("Error during redirectToLogin:", err);
       if (onError) onError(err as Error);
     }
   };
 
-  if (window.location.search.includes("code=")) {
-    console.log("'code' parameter found in URL. Starting auth callback.");
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      if (!window.location.search.includes("code=")) {
+        console.log("No 'code' parameter in URL. Auth callback not started.");
+        return;
+      }
+
+      console.log("handleAuthCallback started");
+
+      try {
+        await fiefAuth.authCallback(`${window.location.origin}/auth/login`);
+        console.log("authCallback completed");
+        // Remove the code parameter from the URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (err) {
+        console.error("Error during authCallback:", err);
+        if (onError) onError(err as Error);
+      }
+    };
+
     handleAuthCallback();
-  } else {
-    console.log("No 'code' parameter in URL. Auth callback not started.");
-  }
-}, [fiefAuth, onSuccess, onError, isAuthCallbackProcessed]);
+  }, [fiefAuth, onError]);
 
-  return <>{children({ handleLoginRedirect })}</>;
-};
-
-// FiefButton component to handle login
-export const FiefButton: React.FC<FiefButtonProps> = ({
-  redirectUrl = `${window.location.origin}/auth/login`,
-  isCard = true,
-  onSuccess,
-  onError,
-}) => {
-  const [errors, setErrors] = useState<string[]>([]);
-  const dispatch = useDispatch();
-
-  const memoizedOnSuccess = useCallback(
-    (accessToken: string, userinfo: any) => {
-      console.log("Login successful, access token:", accessToken);
+  // Use another useEffect to act when tokenInfo becomes available
+  useEffect(() => {
+    if (tokenInfo) {
+      console.log("Token Info:", tokenInfo);
+      console.log("Login successful, access token:", tokenInfo.access_token);
       setErrors([]);
-      if (onSuccess) onSuccess(accessToken, userinfo);
-      // Dispatch your Redux action here:
-      dispatch(loginGoogle({ accessToken, redirectUrl })).unwrap();
-    },
-    [dispatch, onSuccess]
-  );
+      if (onSuccess) onSuccess(tokenInfo.access_token);
+      dispatch(loginFief({ accessToken: tokenInfo.access_token, redirectUrl })).unwrap();
+    }
+  }, [tokenInfo, onSuccess, dispatch, redirectUrl]);
 
-  const memoizedOnError = useCallback(
-    (error: Error) => {
-      console.error("Login error:", error);
-      setErrors([error.message]);
-      if (onError) onError(error);
-    },
-    [onError]
-  );
-
-  // Fief login button to trigger login process
-  const FiefLoginButton = ({
-    handleLoginRedirect,
-  }: {
-    handleLoginRedirect: () => Promise<void>;
-  }) => {
+  const FiefLoginButton = () => {
     const handleClick = async () => {
       try {
-        await handleLoginRedirect(); // Trigger the login redirect
+        await handleLoginRedirect();
       } catch (error) {
-        console.error("Error during login", error); // Log any errors
+        console.error("Error during login", error);
       }
     };
 
     return (
-      <button onClick={handleClick}>
-        {t`Sign in with Fief`} {/* Button text for Fief login */}
-      </button>
+      <ButtonLink onClick={handleClick}>
+        {t`Sign In / Sign Up`}
+      </ButtonLink>
     );
   };
 
   return (
     <GoogleButtonRoot>
       {isCard ? (
-        <CustomFiefAuthProvider
-          baseURL="https://auth.retenly.com"
-          clientId="N2URtkpBDdugSVjE5GYZGgGSTYumLmPUCl49GKj1AdQ"
-          onSuccess={memoizedOnSuccess}
-          onError={memoizedOnError}
-          redirectUrl={redirectUrl}
-        >
-          {({ handleLoginRedirect }) => (
-            <FiefLoginButton handleLoginRedirect={handleLoginRedirect} />
-          )}
-        </CustomFiefAuthProvider>
+        <FiefLoginButton />
       ) : (
-        <TextLink to={redirectUrl}>{t`Sign in with Fief`}</TextLink> // Fallback link
+        <TextLink to={redirectUrl}>{t`Sign In / Sign Up`}</TextLink>
       )}
 
       {errors.length > 0 && (
         <AuthErrorRoot>
           {errors.map((error, index) => (
-            <AuthError key={index}>{error}</AuthError> // Display each error
+            <AuthError key={index}>{error}</AuthError>
           ))}
         </AuthErrorRoot>
       )}

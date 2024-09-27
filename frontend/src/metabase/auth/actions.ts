@@ -70,20 +70,20 @@ export const login = createAsyncThunk(
 );
 
 
-interface LoginGooglePayload {
+interface LoginFiefPayload {
   accessToken: string;
   redirectUrl?: string;
 }
 
 export const LOGIN_GOOGLE = "metabase/auth/LOGIN_GOOGLE";
-export const loginGoogle = createAsyncThunk(
+export const loginFief = createAsyncThunk(
   LOGIN_GOOGLE,
-  async ({ accessToken }: LoginGooglePayload, { dispatch, rejectWithValue }) => {
+  async ({ accessToken }: LoginFiefPayload, { dispatch, rejectWithValue }) => {
     // eslint-disable-next-line no-console
-    console.log("Starting Google login with credentials:", accessToken); // Log start
+    console.log("Starting Fief login with credentials:", accessToken); // Log start
 
     try {
-      console.log("Attempting to create session with Google Auth...");
+      console.log("Attempting to create session with Fief Auth...");
       await SessionApi.createWithGoogleAuth({ token: accessToken });
 
       console.log("Session created successfully. Refreshing session...");
@@ -96,15 +96,13 @@ export const loginGoogle = createAsyncThunk(
         console.log("Small screen detected. Navbar not opened.");
       }
 
-      console.log("Google login flow completed successfully.");
+      console.log("Fief login flow completed successfully.");
     } catch (error) {
-      console.error("Google login failed with error:", error); // Log error
+      console.error("Fief login failed with error:", error); // Log error
       return rejectWithValue(error);
     }
   },
 );
-
-
 
 
 
@@ -118,6 +116,8 @@ export const logout = createAsyncThunk(
     try {
       const state = getState();
       const user = getUser(state);
+      // Clear session storage completely
+      sessionStorage.clear();
 
       if (user?.sso_source === "saml") {
         const { "saml-logout-url": samlLogoutUrl } = await initiateSLO();
@@ -148,11 +148,11 @@ export const FORGOT_PASSWORD = "metabase/auth/FORGOT_PASSWORD";
 export const forgotPassword = createAsyncThunk(
   FORGOT_PASSWORD,
   async (email: string, { rejectWithValue }) => {
-    try {
-      await SessionApi.forgot_password({ email });
-    } catch (error) {
-      return rejectWithValue(error);
-    }
+    // try {
+    //   await SessionApi.forgot_password({ email });
+    // } catch (error) {
+    //   return rejectWithValue(error);
+    // }
   },
 );
 
@@ -168,12 +168,12 @@ export const resetPassword = createAsyncThunk(
     { token, password }: ResetPasswordPayload,
     { dispatch, rejectWithValue },
   ) => {
-    try {
-      await SessionApi.reset_password({ token, password });
-      await dispatch(refreshSession()).unwrap();
-    } catch (error) {
-      return rejectWithValue(error);
-    }
+    // try {
+    //   await SessionApi.reset_password({ token, password });
+    //   await dispatch(refreshSession()).unwrap();
+    // } catch (error) {
+    //   return rejectWithValue(error);
+    // }
   },
 );
 

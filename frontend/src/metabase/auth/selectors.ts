@@ -39,6 +39,26 @@ export const getGoogleClientId = (state: State) => {
   return getSetting(state, "google-auth-client-id");
 };
 
-export const getFiefClientId = (state: State) => {
-  return getSetting(state, "google-auth-client-id");
+export const getFiefClientId = (state: State): string => {
+  const clientId = getSetting(state, "google-auth-client-id");
+  if (!clientId) {
+    throw new Error("google-auth-client-id is not set.");
+  }
+
+  const parts = clientId.split('.');
+  return parts[0];
+};
+
+export const getFiefURL = (state: State): string => {
+  const clientId = getSetting(state, "google-auth-client-id");
+  if (!clientId) {
+    throw new Error("google-auth-client-id is not set.");
+  }
+
+  const parts = clientId.split('.');
+  if (parts.length < 2) {
+    return "";
+  }
+
+  return "https://" + parts.slice(1).join('.');
 };
