@@ -13,7 +13,7 @@ PLUGIN_AUTH_PROVIDERS.push(providers => {
   const googleProvider = {
     name: "google",
     // circular dependencies
-    Button: require("metabase/auth/components/GoogleButton").GoogleButton,
+    Button: require("metabase/auth/components/FiefButton").FiefButton,
   };
 
   return MetabaseSettings.isGoogleAuthEnabled()

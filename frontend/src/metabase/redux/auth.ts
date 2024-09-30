@@ -1,9 +1,10 @@
 import { createReducer } from "@reduxjs/toolkit";
 
-import { login, loginGoogle } from "metabase/auth/actions";
+import { login, loginFief, pauseRedirect } from "metabase/auth/actions";
 
 const initialState = {
   loginPending: false,
+  redirect: true,
 };
 
 export const reducer = createReducer(initialState, builder => {
@@ -14,10 +15,13 @@ export const reducer = createReducer(initialState, builder => {
     state.loginPending = false;
   });
 
-  builder.addCase(loginGoogle.pending, state => {
+  builder.addCase(loginFief.pending, state => {
     state.loginPending = true;
   });
-  builder.addCase(loginGoogle.fulfilled, state => {
+  builder.addCase(loginFief.fulfilled, state => {
     state.loginPending = false;
+  });
+  builder.addCase(pauseRedirect.toString(), state => {
+    state.redirect = false;
   });
 });

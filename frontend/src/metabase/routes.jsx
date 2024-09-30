@@ -119,8 +119,8 @@ export const getRoutes = store => {
             <Route path="login/:provider" title={t`Login`} component={Login} />
           </Route>
           <Route path="logout" component={Logout} />
-          <Route path="forgot_password" component={ForgotPassword} />
-          <Route path="reset_password/:token" component={ResetPassword} />
+          {/*<Route path="forgot_password" component={ForgotPassword} />*/}
+          {/*<Route path="reset_password/:token" component={ResetPassword} />*/}
         </Route>
 
         {/* MAIN */}

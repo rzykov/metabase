@@ -1,3 +1,4 @@
+import { type UnknownAction, createAction } from "@reduxjs/toolkit";
 import { getIn } from "icepick";
 import { push } from "react-router-redux";
 
@@ -14,23 +15,26 @@ import { getSetting } from "metabase/selectors/settings";
 import { getUser } from "metabase/selectors/user";
 import { SessionApi, UtilApi } from "metabase/services";
 
-import {
-  trackLogin,
-  trackLoginGoogle,
-  trackLogout,
-  trackPasswordReset,
-} from "./analytics";
 import type { LoginData } from "./types";
 
 export const REFRESH_LOCALE = "metabase/user/REFRESH_LOCALE";
 export const refreshLocale = createAsyncThunk(
   REFRESH_LOCALE,
-  async (_, { getState }) => {
+  async (_, { dispatch, getState }) => {
     const userLocale = getUser(getState())?.locale;
     const siteLocale = getSetting(getState(), "site-locale");
-    await loadLocalization(userLocale ?? siteLocale ?? "en");
+    if (userLocale && userLocale !== siteLocale) {
+      // This sets a flag to keep the route guard from redirecting us while the reload is happening
+      await dispatch(pauseRedirect());
+      reload();
+    } else {
+      await loadLocalization(userLocale ?? siteLocale ?? "en");
+    }
   },
 );
+
+export const PAUSE_REDIRECT = "metabase/user/PAUSE_REDIRECT";
+export const pauseRedirect = createAction(PAUSE_REDIRECT);
 
 export const REFRESH_SESSION = "metabase/auth/REFRESH_SESSION";
 export const refreshSession = createAsyncThunk(
@@ -38,7 +42,7 @@ export const refreshSession = createAsyncThunk(
   async (_, { dispatch }) => {
     await Promise.all([
       dispatch(refreshCurrentUser()),
-      dispatch(refreshSiteSettings()),
+      dispatch(refreshSiteSettings({})),
     ]);
     await dispatch(refreshLocale()).unwrap();
   },
@@ -52,15 +56,10 @@ interface LoginPayload {
 export const LOGIN = "metabase/auth/LOGIN";
 export const login = createAsyncThunk(
   LOGIN,
-  async (
-    { data, redirectUrl = "/" }: LoginPayload,
-    { dispatch, rejectWithValue },
-  ) => {
+  async ({ data }: LoginPayload, { dispatch, rejectWithValue }) => {
     try {
       await SessionApi.create(data);
       await dispatch(refreshSession()).unwrap();
-      trackLogin();
-      dispatch(push(redirectUrl));
       if (!isSmallScreen()) {
         dispatch(openNavbar());
       }
@@ -70,31 +69,42 @@ export const login = createAsyncThunk(
   },
 );
 
-interface LoginGooglePayload {
-  credential: string;
+
+interface LoginFiefPayload {
+  accessToken: string;
   redirectUrl?: string;
 }
 
 export const LOGIN_GOOGLE = "metabase/auth/LOGIN_GOOGLE";
-export const loginGoogle = createAsyncThunk(
+export const loginFief = createAsyncThunk(
   LOGIN_GOOGLE,
-  async (
-    { credential, redirectUrl = "/" }: LoginGooglePayload,
-    { dispatch, rejectWithValue },
-  ) => {
+  async ({ accessToken }: LoginFiefPayload, { dispatch, rejectWithValue }) => {
+    // eslint-disable-next-line no-console
+    console.log("Starting Fief login with credentials:", accessToken); // Log start
+
     try {
-      await SessionApi.createWithGoogleAuth({ token: credential });
+      console.log("Attempting to create session with Fief Auth...");
+      await SessionApi.createWithGoogleAuth({ token: accessToken });
+
+      console.log("Session created successfully. Refreshing session...");
       await dispatch(refreshSession()).unwrap();
-      trackLoginGoogle();
-      dispatch(push(redirectUrl));
+
       if (!isSmallScreen()) {
+        console.log("Not a small screen. Opening navbar...");
         dispatch(openNavbar());
+      } else {
+        console.log("Small screen detected. Navbar not opened.");
       }
+
+      console.log("Fief login flow completed successfully.");
     } catch (error) {
+      console.error("Fief login failed with error:", error); // Log error
       return rejectWithValue(error);
     }
   },
 );
+
+
 
 export const LOGOUT = "metabase/auth/LOGOUT";
 export const logout = createAsyncThunk(
@@ -106,13 +116,14 @@ export const logout = createAsyncThunk(
     try {
       const state = getState();
       const user = getUser(state);
+      // Clear session storage completely
+      sessionStorage.clear();
 
       if (user?.sso_source === "saml") {
         const { "saml-logout-url": samlLogoutUrl } = await initiateSLO();
 
         dispatch(clearCurrentUser());
         await dispatch(refreshLocale()).unwrap();
-        trackLogout();
 
         if (samlLogoutUrl) {
           window.location.href = samlLogoutUrl;
@@ -121,8 +132,10 @@ export const logout = createAsyncThunk(
         await deleteSession();
         dispatch(clearCurrentUser());
         await dispatch(refreshLocale()).unwrap();
-        trackLogout();
-        dispatch(push(Urls.login()));
+
+        // We use old react-router-redux which references old redux, which does not require
+        // action type to be a string - unlike RTK v2+
+        dispatch(push(Urls.login()) as unknown as UnknownAction);
         reload(); // clears redux state and browser caches
       }
     } catch (error) {
@@ -135,11 +148,11 @@ export const FORGOT_PASSWORD = "metabase/auth/FORGOT_PASSWORD";
 export const forgotPassword = createAsyncThunk(
   FORGOT_PASSWORD,
   async (email: string, { rejectWithValue }) => {
-    try {
-      await SessionApi.forgot_password({ email });
-    } catch (error) {
-      return rejectWithValue(error);
-    }
+    // try {
+    //   await SessionApi.forgot_password({ email });
+    // } catch (error) {
+    //   return rejectWithValue(error);
+    // }
   },
 );
 
@@ -155,13 +168,12 @@ export const resetPassword = createAsyncThunk(
     { token, password }: ResetPasswordPayload,
     { dispatch, rejectWithValue },
   ) => {
-    try {
-      await SessionApi.reset_password({ token, password });
-      await dispatch(refreshSession()).unwrap();
-      trackPasswordReset();
-    } catch (error) {
-      return rejectWithValue(error);
-    }
+    // try {
+    //   await SessionApi.reset_password({ token, password });
+    //   await dispatch(refreshSession()).unwrap();
+    // } catch (error) {
+    //   return rejectWithValue(error);
+    // }
   },
 );
 
