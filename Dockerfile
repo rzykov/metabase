@@ -1,58 +1,108 @@
 ###################
-# STAGE 1: builder
+# STAGE 1: Builder
 ###################
 
-FROM node:18-bullseye as builder
+# Use the official Node.js 18 image as the base for building
+FROM node:18-bullseye AS builder
 
+# Define build-time arguments
 ARG MB_EDITION=oss
-ARG VERSION
+ARG VERSION=latest
 
+# Set the working directory inside the container
 WORKDIR /home/node
 
-RUN apt-get update && apt-get upgrade -y && apt-get install openjdk-11-jdk curl git -y \
-    && curl -O https://download.clojure.org/install/linux-install-1.11.1.1262.sh \
-    && chmod +x linux-install-1.11.1.1262.sh \
-    && ./linux-install-1.11.1.1262.sh
+# Install necessary packages and Clojure
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y openjdk-11-jdk curl git && \
+    curl -O https://download.clojure.org/install/linux-install-1.11.1.1262.sh && \
+    chmod +x linux-install-1.11.1.1262.sh && \
+    ./linux-install-1.11.1.1262.sh && \
+    rm linux-install-1.11.1.1262.sh
 
+# Copy package.json and yarn.lock first for better caching
+COPY package.json yarn.lock ./
+
+# Install frontend dependencies using Yarn
+RUN yarn install
+
+# Initialize Husky (hooks will be installed via the prepare script)
+RUN yarn prepare
+
+# (Optional) Add Git hooks if you have predefined hooks
+# For example, adding a pre-commit hook:
+# RUN npx husky add .husky/pre-commit "yarn lint-staged"
+
+# Copy the rest of the project into the container
 COPY . .
 
-# version is pulled from git, but git doesn't trust the directory due to different owners
+# Configure Git to recognize the working directory as safe
 RUN git config --global --add safe.directory /home/node
 
-# install frontend dependencies
-RUN yarn --frozen-lockfile
-
+# Build the Metabase application
 RUN INTERACTIVE=false CI=true MB_EDITION=$MB_EDITION bin/build.sh :version ${VERSION}
 
-# ###################
-# # STAGE 2: runner
-# ###################
+###################
+# STAGE 2: Runner
+###################
 
-## Remember that this runner image needs to be the same as bin/docker/Dockerfile with the exception that this one grabs the
-## jar from the previous stage rather than the local build
-## we're not yet there to provide an ARM runner till https://github.com/adoptium/adoptium/issues/96 is ready
+# Use Eclipse Temurin JRE 11 on Alpine Linux for a lightweight runtime
+FROM --platform=linux/amd64 eclipse-temurin:11-jre-alpine AS runner
 
-FROM --platform=linux/amd64 eclipse-temurin:11-jre-alpine as runner
+# Set environment variables for localization and Metabase configurations
+ENV FC_LANG=en-US \
+    LC_CTYPE=en_US.UTF-8 \
+    MB_PLUGINS_DIR=/app/plugins/ \
+    MB_DB_TYPE=h2 \
+    MB_DB_FILE=/data/metabase/metabase.db
 
-ENV FC_LANG en-US LC_CTYPE en_US.UTF-8
-
-# dependencies
-RUN apk add -U bash fontconfig curl font-noto font-noto-arabic font-noto-hebrew font-noto-cjk java-cacerts && \
-    apk upgrade && \
-    rm -rf /var/cache/apk/* && \
+# Install runtime dependencies and configure Java CA certificates
+RUN apk add --no-cache \
+        bash \
+        fontconfig \
+        curl \
+        font-noto \
+        font-noto-arabic \
+        font-noto-hebrew \
+        font-noto-cjk \
+        java-cacerts && \
     mkdir -p /app/certs && \
-    curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o /app/certs/rds-combined-ca-bundle.pem  && \
-    /opt/java/openjdk/bin/keytool -noprompt -import -trustcacerts -alias aws-rds -file /app/certs/rds-combined-ca-bundle.pem -keystore /etc/ssl/certs/java/cacerts -keypass changeit -storepass changeit && \
-    curl https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem -o /app/certs/DigiCertGlobalRootG2.crt.pem  && \
-    /opt/java/openjdk/bin/keytool -noprompt -import -trustcacerts -alias azure-cert -file /app/certs/DigiCertGlobalRootG2.crt.pem -keystore /etc/ssl/certs/java/cacerts -keypass changeit -storepass changeit && \
-    mkdir -p /plugins && chmod a+rwx /plugins
+    # Download and add RDS CA bundle
+    curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o /app/certs/rds-combined-ca-bundle.pem && \
+    /opt/java/openjdk/bin/keytool -noprompt -import -trustcacerts \
+        -alias aws-rds \
+        -file /app/certs/rds-combined-ca-bundle.pem \
+        -keystore /etc/ssl/certs/java/cacerts \
+        -keypass changeit \
+        -storepass changeit && \
+    # Download and add DigiCert Global Root G2 certificate
+    curl https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem -o /app/certs/DigiCertGlobalRootG2.crt.pem && \
+    /opt/java/openjdk/bin/keytool -noprompt -import -trustcacerts \
+        -alias azure-cert \
+        -file /app/certs/DigiCertGlobalRootG2.crt.pem \
+        -keystore /etc/ssl/certs/java/cacerts \
+        -keypass changeit \
+        -storepass changeit && \
+    # Prepare the plugins directory
+    mkdir -p /app/plugins && \
+    chmod a+rwx /app/plugins
 
-# add Metabase script and uberjar
+# Copy the built Metabase JAR from the builder stage
 COPY --from=builder /home/node/target/uberjar/metabase.jar /app/
+
+# Copy the Metabase startup script
 COPY bin/docker/run_metabase.sh /app/
 
-# expose our default runtime port
+# Add the DuckDB Metabase driver plugin
+ADD https://github.com/MotherDuck-Open-Source/metabase_duckdb_driver/releases/download/0.2.10/duckdb.metabase-driver.jar /app/plugins/
+RUN chmod 744 /app/plugins/duckdb.metabase-driver.jar
+
+# Create the data directory for Metabase database
+RUN mkdir -p /data/metabase
+
+# Expose the default Metabase port
 EXPOSE 3000
 
-# run it
+# Set the entrypoint to the Metabase startup script
 ENTRYPOINT ["/app/run_metabase.sh"]
