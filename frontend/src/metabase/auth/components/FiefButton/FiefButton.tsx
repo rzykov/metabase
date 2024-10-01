@@ -4,6 +4,7 @@ import { FiefAuthProvider, useFiefAuth, useFiefTokenInfo } from "@fief/fief/reac
 import { useDispatch, useSelector } from "metabase/lib/redux";
 import { loginFief } from "../../actions";
 import { getFiefClientId, getFiefURL } from "../../selectors";
+import MetabaseSettings from "metabase/lib/settings";
 
 import {
   GoogleButtonRoot,
@@ -91,9 +92,10 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
   const handleLoginRedirect = async () => {
     try {
       console.log("Redirecting to Fief login...");
-      await fiefAuth.redirectToLogin(`${window.location.origin}/auth/login`);
+      await fiefAuth.redirectToLogin(`${MetabaseSettings.get("site-url")}/auth/login`);
     } catch (err) {
       console.error("Error during redirectToLogin:", err);
+      setErrors(prev => [...prev, err.message || 'Redirect error']);
       if (onError) onError(err as Error);
     }
   };
@@ -108,7 +110,7 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
       console.log("handleAuthCallback started");
 
       try {
-        await fiefAuth.authCallback(`${window.location.origin}/auth/login`);
+        await fiefAuth.authCallback(`${MetabaseSettings.get("site-url")}/auth/login`);
         console.log("authCallback completed");
         // Remove the code parameter from the URL
         window.history.replaceState({}, document.title, window.location.pathname);
