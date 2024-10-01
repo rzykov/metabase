@@ -1885,14 +1885,13 @@
     tempfile "^3.0.0"
     which "^3.0.0"
 
-"@fief/fief@0.14.1":
-  version "0.14.1"
-  resolved "https://registry.yarnpkg.com/@fief/fief/-/fief-0.14.1.tgz#f9c6dcbf78d77bb98487a4cafd038c133636b651"
-  integrity sha512-mZa5Qo51jlzJgPifQKtpUWMXviQcuh1YfaEqwFa3qGYIKsAUVeD5x0atw1cXLz/1+tI3zRNk6d/hZgJeAl1SPA==
+"@fief/fief@latest":
+  version "0.15.0-beta.2"
+  resolved "https://registry.yarnpkg.com/@fief/fief/-/fief-0.15.0-beta.2.tgz#34608e0203433ad2fb073317a85e6922c87a0915"
+  integrity sha512-pLhyFz5sC3uHCU0NH/i6cc/6MS1tG2q2ZuRlwfnupSzwBfZhoOBD/1/B8WqDOSnVc2XNqUqJI6INp+gRB3GviQ==
   dependencies:
     encoding "^0.1.13"
-    jose "^4.6.0"
-    node-fetch "^2.6.7"
+    jose "^5.4.0"
     path-to-regexp "^6.2.1"
 
 "@floating-ui/core@^1.4.2":
@@ -15402,10 +15401,10 @@ jmespath@0.16.0:
   resolved "https://registry.yarnpkg.com/jmespath/-/jmespath-0.16.0.tgz#b15b0a85dfd4d930d43e69ed605943c802785076"
   integrity sha512-9FzQjJ7MATs1tSpnco1K6ayiYE3figslrXA72G2HQ/n76RzvYlofyi5QM+iX4YRs/pu3yzxlVQSST23+dMDknw==
 
-jose@^4.6.0:
-  version "4.15.9"
-  resolved "https://registry.yarnpkg.com/jose/-/jose-4.15.9.tgz#9b68eda29e9a0614c042fa29387196c7dd800100"
-  integrity sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA==
+jose@^5.4.0:
+  version "5.9.3"
+  resolved "https://registry.yarnpkg.com/jose/-/jose-5.9.3.tgz#6eba1ee3f70b42891f0e1883fe0084a46dbbe02c"
+  integrity sha512-egLIoYSpcd+QUF+UHgobt5YzI2Pkw/H39ou9suW687MY6PmCwPmkNV/4TNjn1p2tX5xO3j0d0sq5hiYE24bSlg==
 
 jose@^5.6.3:
   version "5.6.3"
