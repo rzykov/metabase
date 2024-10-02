@@ -94,9 +94,6 @@ COPY --from=builder /home/node/target/uberjar/metabase.jar /app/
 # Copy the Metabase startup script
 COPY bin/docker/run_metabase.sh /app/
 
-# Add the DuckDB Metabase driver plugin
-ADD https://github.com/MotherDuck-Open-Source/metabase_duckdb_driver/releases/download/0.2.10/duckdb.metabase-driver.jar /app/plugins/
-RUN chmod 744 /app/plugins/duckdb.metabase-driver.jar
 
 # Create the data directory for Metabase database
 RUN mkdir -p /data/metabase
