@@ -60,13 +60,15 @@ ENV FC_LANG=en-US \
 # Install runtime dependencies and configure Java CA certificates
 RUN apk add --no-cache \
         bash \
+        sh \
         fontconfig \
         curl \
         font-noto \
         font-noto-arabic \
         font-noto-hebrew \
         font-noto-cjk \
-        java-cacerts && \
+        java-cacerts \
+        libstdc++ && \  # Install libstdc++
     mkdir -p /app/certs && \
     # Download and add RDS CA bundle
     curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o /app/certs/rds-combined-ca-bundle.pem && \
@@ -96,7 +98,7 @@ COPY --from=builder /home/node/target/uberjar/metabase.jar /app/
 COPY bin/docker/run_metabase.sh /app/
 
 # Add the DuckDB Metabase driver plugin
-ADD https://github.com/MotherDuck-Open-Source/metabase_duckdb_driver/releases/download/0.2.10/duckdb.metabase-driver.jar /app/plugins/
+ADD https://github.com/MotherDuck-Open-Source/metabase_duckdb_driver/releases/download/0.2.9/duckdb.metabase-driver.jar /app/plugins/
 RUN chmod 744 /app/plugins/duckdb.metabase-driver.jar
 
 # Create the data directory for Metabase database
