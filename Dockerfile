@@ -68,7 +68,7 @@ RUN apk add --no-cache \
         font-noto-hebrew \
         font-noto-cjk \
         java-cacerts \
-        libstdc++ && \  # Install libstdc++
+        libstdc++ && \
     mkdir -p /app/certs && \
     # Download and add RDS CA bundle
     curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o /app/certs/rds-combined-ca-bundle.pem && \
