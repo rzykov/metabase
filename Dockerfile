@@ -58,38 +58,9 @@ ENV FC_LANG=en-US \
     MB_DB_FILE=/data/metabase/metabase.db
 
 # Install runtime dependencies and configure Java CA certificates
-RUN apk add --no-cache \
-        bash \
-        fontconfig \
-        curl \
-        font-noto \
-        font-noto-arabic \
-        font-noto-hebrew \
-        font-noto-cjk \
-        java-cacerts \
-        libstdc++ && \
-    mkdir -p /app/certs && \
-    # Download and add RDS CA bundle
-    curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o /app/certs/rds-combined-ca-bundle.pem && \
-    /opt/java/openjdk/bin/keytool -noprompt -import -trustcacerts \
-        -alias aws-rds \
-        -file /app/certs/rds-combined-ca-bundle.pem \
-        -keystore /etc/ssl/certs/java/cacerts \
-        -keypass changeit \
-        -storepass changeit && \
-    # Download and add DigiCert Global Root G2 certificate
-    curl https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem -o /app/certs/DigiCertGlobalRootG2.crt.pem && \
-    /opt/java/openjdk/bin/keytool -noprompt -import -trustcacerts \
-        -alias azure-cert \
-        -file /app/certs/DigiCertGlobalRootG2.crt.pem \
-        -keystore /etc/ssl/certs/java/cacerts \
-        -keypass changeit \
-        -storepass changeit && \
-    # Prepare the plugins directory
-    mkdir -p /app/plugins && \
+RUN mkdir -p /app/plugins && \
     chmod a+rwx /app/plugins
 
-ENV MB_PLUGINS_DIR=/app/plugins/
 # Copy the built Metabase JAR from the builder stage
 COPY --from=builder /home/node/target/uberjar/metabase.jar /app/
 
