@@ -48,7 +48,7 @@ RUN INTERACTIVE=false CI=true MB_EDITION=$MB_EDITION bin/build.sh :version ${VER
 ###################
 
 # Use Eclipse Temurin JRE 11 on Alpine Linux for a lightweight runtime
-FROM --platform=linux/amd64 eclipse-temurin:11-jre-alpine AS runner
+FROM openjdk:19-buster AS runner
 
 # Set environment variables for localization and Metabase configurations
 ENV FC_LANG=en-US \
