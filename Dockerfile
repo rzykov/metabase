@@ -60,7 +60,6 @@ ENV FC_LANG=en-US \
 # Install runtime dependencies and configure Java CA certificates
 RUN apk add --no-cache \
         bash \
-        sh \
         fontconfig \
         curl \
         font-noto \
