@@ -72,7 +72,7 @@
               (throw (ex-info (tru "Invalid domain") {:status-code 400})))
             (setting/set-value-of-type! :string :google-auth-auto-create-accounts-domain domain)))
 
-(def ^:private fief-userinfo-url "https://auth.retenly.com/api/userinfo")
+(def ^:private fief-userinfo-url "https://auth.corpsignals.com/api/userinfo")
 
 (defn- get-userinfo [access-token]
   (let [response (http/get fief-userinfo-url
