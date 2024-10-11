@@ -80,23 +80,17 @@ export const loginFief = createAsyncThunk(
   LOGIN_GOOGLE,
   async ({ accessToken }: LoginFiefPayload, { dispatch, rejectWithValue }) => {
     // eslint-disable-next-line no-console
-    console.log("Starting Fief login with credentials:", accessToken); // Log start
 
     try {
-      console.log("Attempting to create session with Fief Auth...");
+
       await SessionApi.createWithGoogleAuth({ token: accessToken });
 
-      console.log("Session created successfully. Refreshing session...");
       await dispatch(refreshSession()).unwrap();
 
       if (!isSmallScreen()) {
-        console.log("Not a small screen. Opening navbar...");
         dispatch(openNavbar());
-      } else {
-        console.log("Small screen detected. Navbar not opened.");
       }
 
-      console.log("Fief login flow completed successfully.");
     } catch (error) {
       console.error("Fief login failed with error:", error); // Log error
       return rejectWithValue(error);

@@ -67,12 +67,16 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
   setErrors,
 }) => {
   const fiefAuth = useFiefAuth();
-  const tokenInfo = useFiefTokenInfo(); // Use the hook to get token info
+  const tokenInfo = useFiefTokenInfo();
+  const [redirectUrlFromState, setRedirectUrlFromState] = useState<string>(redirectUrl);
+
 
   const handleLoginRedirect = async () => {
     try {
       console.log("Redirecting to Fief login...");
-      await fiefAuth.redirectToLogin(`${window.location.origin}/auth/login`);
+      await fiefAuth.redirectToLogin(`${window.location.origin}/auth/login`, {
+        state: redirectUrl,
+      });
     } catch (err) {
       console.error("Error during redirectToLogin:", err);
       if (onError) onError(err as Error);
@@ -81,17 +85,22 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      if (!window.location.search.includes("code=")) {
-        console.log("No 'code' parameter in URL. Auth callback not started.");
+      const urlParams = new URLSearchParams(window.location.search);
+      if (!urlParams.has("code")) {
         return;
       }
 
       console.log("handleAuthCallback started");
 
       try {
+        // Retrieve the state parameter
+        const stateParam = urlParams.get("state");
+        const redirectUrlFromState = stateParam || redirectUrl;
+        setRedirectUrlFromState(redirectUrlFromState);
+
         await fiefAuth.authCallback(`${window.location.origin}/auth/login`);
-        console.log("authCallback completed");
-        // Remove the code parameter from the URL
+
+        // Remove the code and state parameters from the URL
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (err) {
         console.error("Error during authCallback:", err);
@@ -100,18 +109,32 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
     };
 
     handleAuthCallback();
-  }, [fiefAuth, onError]);
+  }, [fiefAuth, onError, redirectUrl]);
+
 
   // Use another useEffect to act when tokenInfo becomes available
   useEffect(() => {
-    if (tokenInfo) {
-      console.log("Token Info:", tokenInfo);
-      console.log("Login successful, access token:", tokenInfo.access_token);
-      setErrors([]);
-      if (onSuccess) onSuccess(tokenInfo.access_token);
-      dispatch(loginFief({ accessToken: tokenInfo.access_token, redirectUrl })).unwrap();
-    }
-  }, [tokenInfo, onSuccess, dispatch, redirectUrl]);
+    const handleLoginFief = async () => {
+      if (tokenInfo) {
+        setErrors([]);
+        if (onSuccess) onSuccess(tokenInfo.access_token);
+        try {
+          await dispatch(
+            loginFief({ accessToken: tokenInfo.access_token, redirectUrl: redirectUrlFromState }),
+          ).unwrap();
+
+          // Redirect the user to the URL from the state parameter
+          window.location.href = redirectUrlFromState;
+        } catch (err) {
+          console.error("Error during loginFief:", err);
+          if (onError) onError(err as Error);
+        }
+      }
+    };
+
+    handleLoginFief();
+  }, [tokenInfo, onSuccess, dispatch, redirectUrlFromState]);
+
 
   const FiefLoginButton = () => {
     const handleClick = async () => {
