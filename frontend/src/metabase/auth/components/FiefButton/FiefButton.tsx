@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { t } from "ttag";
 import { FiefAuthProvider, useFiefAuth, useFiefTokenInfo } from "@fief/fief/react";
 import { useDispatch, useSelector } from "metabase/lib/redux";
@@ -12,7 +12,6 @@ import {
   TextLink,
   ButtonLink,
 } from "./GoogleButton.styled";
-
 
 interface FiefButtonProps {
   redirectUrl?: string;
@@ -69,7 +68,9 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
   const fiefAuth = useFiefAuth();
   const tokenInfo = useFiefTokenInfo();
   const [redirectUrlFromState, setRedirectUrlFromState] = useState<string>(redirectUrl);
-
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [countdown, setCountdown] = useState<number>(5);
+  const [isInitialState, setIsInitialState] = useState<boolean>(true);
 
   const handleLoginRedirect = async () => {
     try {
@@ -84,6 +85,32 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
   };
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("code")) {
+      setIsInitialState(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialState) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prevCountdown) => {
+        if (prevCountdown <= 1) {
+          clearInterval(timer);
+          if (buttonRef.current) {
+            buttonRef.current.click();
+          }
+          return 0;
+        }
+        return prevCountdown - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isInitialState]);
+
+  useEffect(() => {
     const handleAuthCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       if (!urlParams.has("code")) {
@@ -93,14 +120,12 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
       console.log("handleAuthCallback started");
 
       try {
-        // Retrieve the state parameter
         const stateParam = urlParams.get("state");
         const redirectUrlFromState = stateParam || redirectUrl;
         setRedirectUrlFromState(redirectUrlFromState);
 
         await fiefAuth.authCallback(`${window.location.origin}/auth/login`);
 
-        // Remove the code and state parameters from the URL
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (err) {
         console.error("Error during authCallback:", err);
@@ -111,8 +136,6 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
     handleAuthCallback();
   }, [fiefAuth, onError, redirectUrl]);
 
-
-  // Use another useEffect to act when tokenInfo becomes available
   useEffect(() => {
     const handleLoginFief = async () => {
       if (tokenInfo) {
@@ -123,7 +146,6 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
             loginFief({ accessToken: tokenInfo.access_token, redirectUrl: redirectUrlFromState }),
           ).unwrap();
 
-          // Redirect the user to the URL from the state parameter
           window.location.href = redirectUrlFromState;
         } catch (err) {
           console.error("Error during loginFief:", err);
@@ -135,18 +157,9 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
     handleLoginFief();
   }, [tokenInfo, onSuccess, dispatch, redirectUrlFromState]);
 
-
   const FiefLoginButton = () => {
-    const handleClick = async () => {
-      try {
-        await handleLoginRedirect();
-      } catch (error) {
-        console.error("Error during login", error);
-      }
-    };
-
     return (
-      <ButtonLink onClick={handleClick}>
+      <ButtonLink onClick={handleLoginRedirect} ref={buttonRef}>
         {t`Sign In / Sign Up`}
       </ButtonLink>
     );
@@ -155,7 +168,10 @@ const FiefButtonContent: React.FC<FiefButtonContentProps> = ({
   return (
     <GoogleButtonRoot>
       {isCard ? (
-        <FiefLoginButton />
+        <>
+          <FiefLoginButton />
+          {isInitialState && <p>You will be redirected in {countdown} seconds</p>}
+        </>
       ) : (
         <TextLink to={redirectUrl}>{t`Sign In / Sign Up`}</TextLink>
       )}

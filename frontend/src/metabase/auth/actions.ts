@@ -14,6 +14,8 @@ import { clearCurrentUser, refreshCurrentUser } from "metabase/redux/user";
 import { getSetting } from "metabase/selectors/settings";
 import { getUser } from "metabase/selectors/user";
 import { SessionApi, UtilApi } from "metabase/services";
+import { Fief } from '@fief/fief';
+import { getFiefClientId, getFiefURL } from "./selectors";
 
 import type { LoginData } from "./types";
 
@@ -130,7 +132,27 @@ export const logout = createAsyncThunk(
         // We use old react-router-redux which references old redux, which does not require
         // action type to be a string - unlike RTK v2+
         dispatch(push(Urls.login()) as unknown as UnknownAction);
-        reload(); // clears redux state and browser caches
+               // Perform Fief logout
+        const fiefClientId = getFiefClientId(state);
+        const fiefURL = getFiefURL(state);
+
+        if (fiefClientId && fiefURL) {
+          const fiefClient = new Fief({
+            baseURL: fiefURL,
+            clientId: fiefClientId,
+          });
+
+          try {
+            const logoutURL = await fiefClient.getLogoutURL({ redirectURI: 'https://corpsignals.com' });
+            window.location.href = logoutURL;
+          } catch (error) {
+            console.error('Failed to get Fief logout URL:', error);
+            reload(); // Fallback to regular reload if Fief logout fails
+          }
+        } else {
+          console.error('Fief client ID or URL not found in state');
+          reload(); // Fallback to regular reload if Fief config is missing
+        }
       }
     } catch (error) {
       return rejectWithValue(error);
