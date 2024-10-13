@@ -1,35 +1,43 @@
-# Open source authorisation for Metabase
+# Open Source Authorization for Metabase
 
-Based on fief (https://docs.fief.dev).
+Based on [Fief](https://docs.fief.dev).
 
 ## Problem
-My pet project (corpsignals.com) needed a sharable user registration service, which can be used by multiple applications.
-Also, I use Metabase for analytics. I wanted to use the same user registration service for Metabase.
-Metabase supports LDAP, Google OAuth and Email. Enterprise version of Metabase supports SAML and JWT (SSO).
-But the Enteprise verison is an overkill for my use case. I wanted to use my own user registration service.
+
+My pet project needed a shareable user registration service that could be used by multiple applications. I also use Metabase for analytics and wanted to utilize the same user registration service for Metabase.
+
+Metabase supports LDAP, Google OAuth, and email authentication. The Enterprise version of Metabase supports SAML and JWT (SSO), but it's overkill for my use case. I wanted to use my own user registration service.
 
 ## Solution
-I have to modify the Metabase source code to add the fief authorisation mechanism for my pet project. As a base auth service
-I used the fief (https://docs.fief.dev) service (open source). I have to modify the Metabase source code to add the fief authorisation mechanism.
 
-How it works:
-1. A user goes to the Metabase login page (app.corpsignals.com).
-2. The user clicks the SignIn/SignUp button, or he will be redirected after 5 seconds automatically.
-3. The fief will ask a user to register. After registration, the user will be redirected to the Metabase.
-4. If a user comes to the specific Metabase page, he will be redirected to it after log in.
-5. A user can't modify his profile in Metabase.
-6. When a user clicks the logout button, he will be log outed from the fief too. And redirected to the specific page.
+I decided to modify the Metabase source code to add the Fief authorization mechanism for my project. As a base authentication service, I used the open-source [Fief](https://docs.fief.dev) service.
 
-Video demo: https://www.youtube.com/watch?v=5Q6J9Q6Q9ZQ
+### How It Works
 
+1. A user goes to the Metabase login page ([app.corpsignals.com](http://app.corpsignals.com)).
+2. The user clicks the **Sign In/Sign Up** button or is redirected automatically after 5 seconds.
+3. Fief prompts the user to register. After registration, the user is redirected back to Metabase.
+4. If the user navigates to a specific Metabase page, they will be redirected to it after logging in.
+5. A user cannot modify their profile within Metabase.
+6. When a user clicks the **Logout** button, they are logged out from Fief as well and redirected to a specific page.
+
+[Video Demo](https://youtube.com/shorts/q4NtkSwZQeg)
 
 ## Steps
-1. Clone the Metabase source code from this branch
-2. Modify the Metabase source code:
-    * Change a domain where a user will be redirected after logout here https://github.com/rzykov/metabase/blob/fiev_auth/frontend/src/metabase/auth/actions.ts#L146
-    * Change to the fief's subdomain here https://github.com/rzykov/metabase/blob/fiev_auth/src/metabase/integrations/google.clj#L75
-    * Find corpsignals (remove retenly lines too) domain and replace it with your fief subdomain here: https://github.com/rzykov/metabase/blob/fiev_auth/src/metabase/server/middleware/security.clj
-3. Build Metabase with a command. Read the Metabase documentation to get more information.:
+
+1. **Clone the Metabase Source Code**
+
+   Clone the Metabase source code from [this branch](https://github.com/rzykov/metabase/tree/fiev_auth).
+
+2. **Modify the Metabase Source Code**
+
+   - Change the domain where a user will be redirected after logout [here](https://github.com/rzykov/metabase/blob/fiev_auth/frontend/src/metabase/auth/actions.ts#L146).
+   - Change to your Fief subdomain [here](https://github.com/rzykov/metabase/blob/fiev_auth/src/metabase/integrations/google.clj#L75).
+   - Find occurrences of `corpsignals` (and remove `retenly` lines as well) and replace them with your Fief subdomain [here](https://github.com/rzykov/metabase/blob/fiev_auth/src/metabase/server/middleware/security.clj).
+
+3. **Build Metabase**
+
+   Build Metabase using the following command. Refer to the Metabase documentation for more information:
 ```
 DOCKER_BUILDKIT=1 docker build -t metabase_fief .
 ```
