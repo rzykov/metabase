@@ -21,7 +21,7 @@ I decided to modify the Metabase source code to add the Fief authorization mecha
 5. A user cannot modify their profile within Metabase.
 6. When a user clicks the **Logout** button, they are logged out from Fief as well and redirected to a specific page.
 
-[Video Demo](https://youtube.com/shorts/q4NtkSwZQeg)
+[Video Demo](https://youtube.com/shorts/hfmGOYF_6RI)
 
 ## Steps
 
