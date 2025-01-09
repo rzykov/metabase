@@ -119,8 +119,9 @@
                                  "ws://*:9630")]
                 :manifest-src ["'self'"]
                 :worker-src   ["'self'"
-                               "blob:"]}
-      (format "%s %s; " (name k) (str/join " " vs)))))})
+                               "blob:"]}]
+      (format "%s %s; " (name k) (str/join " " vs))))})
+
 
 
 (defn- embedding-app-origin
