@@ -61,66 +61,66 @@
   {"Content-Security-Policy"
    (str/join
     (for [[k vs] {:default-src  ["'none'"]
-                  :script-src   (concat
-                                 ["'self'"
-                                  "https://maps.google.com"
-                                  "https://auth.retenly.com"
-                                  "https://auth.corpsignals.com"
-                                  "https://static.openreplay.com"
-                                  (when (public-settings/anon-tracking-enabled)
-                                    "https://www.google-analytics.com")
-                                  ;; for webpack hot reloading
-                                  (when config/is-dev?
-                                    "http://localhost:8080")
-                                  ;; for react dev tools to work in Firefox until resolution of
-                                  ;; https://github.com/facebook/react/issues/17997
-                                  (when config/is-dev?
-                                    "'unsafe-inline'")]
-                                 ;; CLJS REPL
-                                 (when config/is-dev?
-                                   ["'unsafe-eval'"
-                                    "http://localhost:9630"])
-                                 (when-not config/is-dev?
-                                   (map (partial format "'sha256-%s'") inline-js-hashes)))
-                  :child-src    ["'self'"
-                                 "https://auth.retenly.com"
-                                 "https://auth.corpsignals.com"]
-                  :style-src    ["'self'"
-                                 "'unsafe-inline'"
-                                 (when nonce
-                                   (format "'nonce-%s'" nonce))
-                                 ;; for webpack hot reloading
-                                 (when config/is-dev?
-                                   "http://localhost:8080")
-                                 ;; CLJS REPL
-                                 (when config/is-dev?
-                                   "http://localhost:9630")
-                                 "https://auth.retenly.com"
-                                 "https://auth.corpsignals.com"]
-                  :font-src     ["*"]
-                  :img-src      ["*"
-                                 "'self' data:"]
-                  :connect-src  ["'self'"
-                                 ;; Google Identity Services
-                                 "https://auth.retenly.com"
-                                 "https://auth.corpsignals.com"
-                                 "https://static.openreplay.com"
-                                 "https://api.openreplay.com"
-                                 ;; MailChimp. So people can sign up for the Metabase mailing list in the sign up process
-                                 "metabase.us10.list-manage.com"
-                                 ;; Snowplow analytics
-                                 (when (public-settings/anon-tracking-enabled)
-                                   (snowplow/snowplow-url))
-                                 ;; Webpack dev server
-                                 (when config/is-dev?
-                                   "*:8080 ws://*:8080")
-                                 ;; CLJS REPL
-                                 (when config/is-dev?
-                                   "ws://*:9630")]
-                  :manifest-src ["'self'"]
-                  :worker-src   ["'self'"
-                                 "blob:"]
-        (format "%s %s; " (name k) (str/join " " vs)))))})
+                :script-src   (concat
+                               ["'self'"
+                                "https://maps.google.com"
+                                "https://auth.retenly.com"
+                                "https://auth.corpsignals.com"
+                                "https://static.openreplay.com"
+                                (when (public-settings/anon-tracking-enabled)
+                                  "https://www.google-analytics.com")
+                                ;; for webpack hot reloading
+                                (when config/is-dev?
+                                  "http://localhost:8080")
+                                ;; for react dev tools to work in Firefox until resolution of
+                                ;; https://github.com/facebook/react/issues/17997
+                                (when config/is-dev?
+                                  "'unsafe-inline'")]
+                               ;; CLJS REPL
+                               (when config/is-dev?
+                                 ["'unsafe-eval'"
+                                  "http://localhost:9630"])
+                               (when-not config/is-dev?
+                                 (map (partial format "'sha256-%s'") inline-js-hashes)))
+                :child-src    ["'self'"
+                               "https://auth.retenly.com"
+                               "https://auth.corpsignals.com"]
+                :style-src    ["'self'"
+                               "'unsafe-inline'"
+                               (when nonce
+                                 (format "'nonce-%s'" nonce))
+                               ;; for webpack hot reloading
+                               (when config/is-dev?
+                                 "http://localhost:8080")
+                               ;; CLJS REPL
+                               (when config/is-dev?
+                                 "http://localhost:9630")
+                               "https://auth.retenly.com"
+                               "https://auth.corpsignals.com"]
+                :font-src     ["*"]
+                :img-src      ["*"
+                               "'self' data:"]
+                :connect-src  ["'self'"
+                               ;; Google Identity Services
+                               "https://auth.retenly.com"
+                               "https://auth.corpsignals.com"
+                               "https://static.openreplay.com"
+                               "https://api.openreplay.com"
+                               ;; MailChimp. So people can sign up for the Metabase mailing list in the sign up process
+                               "metabase.us10.list-manage.com"
+                               ;; Snowplow analytics
+                               (when (public-settings/anon-tracking-enabled)
+                                 (snowplow/snowplow-url))
+                               ;; Webpack dev server
+                               (when config/is-dev?
+                                 "*:8080 ws://*:8080")
+                               ;; CLJS REPL
+                               (when config/is-dev?
+                                 "ws://*:9630")]
+                :manifest-src ["'self'"]
+                :worker-src   ["'self'"
+                               "blob:"]}
+      (format "%s %s; " (name k) (str/join " " vs)))))})
 
 
 (defn- embedding-app-origin
