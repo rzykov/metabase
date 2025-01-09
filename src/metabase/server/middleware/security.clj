@@ -56,7 +56,7 @@
   {"Strict-Transport-Security" "max-age=31536000"})
 
 (defn- content-security-policy-header
-  "`Content-Security-Policy` header. See https://content-security-policy.com for more details."
+  "Content-Security-Policy header."
   [nonce]
   {"Content-Security-Policy"
    (str/join
@@ -66,17 +66,17 @@
                                   "https://maps.google.com"
                                   "https://auth.retenly.com"
                                   "https://auth.corpsignals.com"
-				  "https://static.openreplay.com"
+                                  "https://static.openreplay.com"
                                   (when (public-settings/anon-tracking-enabled)
                                     "https://www.google-analytics.com")
-                                   ;; for webpack hot reloading
+                                  ;; for webpack hot reloading
                                   (when config/is-dev?
                                     "http://localhost:8080")
-                                   ;; for react dev tools to work in Firefox until resolution of
-                                   ;; https://github.com/facebook/react/issues/17997
+                                  ;; for react dev tools to work in Firefox until resolution of
+                                  ;; https://github.com/facebook/react/issues/17997
                                   (when config/is-dev?
                                     "'unsafe-inline'")]
-                                  ;; CLJS REPL
+                                 ;; CLJS REPL
                                  (when config/is-dev?
                                    ["'unsafe-eval'"
                                     "http://localhost:9630"])
@@ -86,8 +86,7 @@
                                  "https://auth.retenly.com"
                                  "https://auth.corpsignals.com"]
                   :style-src    ["'self'"
-                                 "'unsafe-inline'" ; Add this line
-                                 ;; See [[generate-nonce]]
+                                 "'unsafe-inline'"
                                  (when nonce
                                    (format "'nonce-%s'" nonce))
                                  ;; for webpack hot reloading
@@ -105,8 +104,8 @@
                                  ;; Google Identity Services
                                  "https://auth.retenly.com"
                                  "https://auth.corpsignals.com"
-				"https://static.openreplay.com"
-            			 "https://api.openreplay.com"
+                                 "https://static.openreplay.com"
+                                 "https://api.openreplay.com"
                                  ;; MailChimp. So people can sign up for the Metabase mailing list in the sign up process
                                  "metabase.us10.list-manage.com"
                                  ;; Snowplow analytics
@@ -118,8 +117,12 @@
                                  ;; CLJS REPL
                                  (when config/is-dev?
                                    "ws://*:9630")]
-                  :manifest-src ["'self'"]}]
-      (format "%s %s; " (name k) (str/join " " vs))))})
+                  :manifest-src ["'self'"]
+                  :worker-src   ["'self'"
+                                 "blob:" ;; Added to allow blob URLs in workers
+                                 ;; Add other sources if necessary
+                                }]
+        (format "%s %s; " (name k) (str/join " " vs)))))})
 
 
 (defn- embedding-app-origin
