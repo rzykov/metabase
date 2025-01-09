@@ -66,6 +66,7 @@
                                   "https://maps.google.com"
                                   "https://auth.retenly.com"
                                   "https://auth.corpsignals.com"
+				  "https://static.openreplay.com"
                                   (when (public-settings/anon-tracking-enabled)
                                     "https://www.google-analytics.com")
                                    ;; for webpack hot reloading
@@ -104,6 +105,8 @@
                                  ;; Google Identity Services
                                  "https://auth.retenly.com"
                                  "https://auth.corpsignals.com"
+				"https://static.openreplay.com"
+            			 "https://api.openreplay.com"
                                  ;; MailChimp. So people can sign up for the Metabase mailing list in the sign up process
                                  "metabase.us10.list-manage.com"
                                  ;; Snowplow analytics
@@ -117,6 +120,7 @@
                                    "ws://*:9630")]
                   :manifest-src ["'self'"]}]
       (format "%s %s; " (name k) (str/join " " vs))))})
+
 
 (defn- embedding-app-origin
   []
