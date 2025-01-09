@@ -119,9 +119,7 @@
                                    "ws://*:9630")]
                   :manifest-src ["'self'"]
                   :worker-src   ["'self'"
-                                 "blob:" ;; Added to allow blob URLs in workers
-                                 ;; Add other sources if necessary
-                                }]
+                                 "blob:"]
         (format "%s %s; " (name k) (str/join " " vs)))))})
 
 
