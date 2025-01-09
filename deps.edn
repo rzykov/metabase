@@ -213,7 +213,7 @@
  {"athena"   {:url "https://s3.amazonaws.com/maven-athena"}
   "redshift" {:url "https://s3.amazonaws.com/redshift-maven-repository/release"}
   ;; for metabase/saml20-clj
-  "opensaml" {:url "https://build.shibboleth.net/nexus/content/repositories/releases/"}}
+  "opensaml" {:url "https://build.shibboleth.net/maven/releases/"}}
 
  :aliases
  {;;; Local Dev & test profiles
