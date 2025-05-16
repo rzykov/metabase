@@ -72,12 +72,12 @@ function ProfileLink({
     const showAdminSettingsItem = adminItems?.length > 0;
 
     return [
-      {
-        title: t`Account settings`,
-        icon: null,
-        link: Urls.accountSettings(),
-        event: `Navbar;Profile Dropdown;Edit Profile`,
-      },
+      // {
+      //   title: t`Account settings`,
+      //   icon: null,
+      //   link: Urls.accountSettings(),
+      //   event: `Navbar;Profile Dropdown;Edit Profile`,
+      // },
       showAdminSettingsItem && {
         title: t`Admin settings`,
         icon: null,

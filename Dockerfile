@@ -2,10 +2,10 @@
 # STAGE 1: builder
 ###################
 
-FROM node:18-bullseye as builder
+FROM node:22 as builder
 
 ARG MB_EDITION=oss
-ARG VERSION
+ARG VERSION=latest
 
 WORKDIR /home/node
 
@@ -38,7 +38,11 @@ RUN INTERACTIVE=false CI=true MB_EDITION=$MB_EDITION bin/build.sh :version ${VER
 
 FROM eclipse-temurin:21-jre-alpine as runner
 
-ENV FC_LANG en-US LC_CTYPE en_US.UTF-8
+ENV FC_LANG=en-US \
+    LC_CTYPE=en_US.UTF-8 \
+    MB_PLUGINS_DIR=/app/plugins/ \
+    MB_DB_TYPE=h2 \
+    MB_DB_FILE=/data/metabase/metabase.db
 
 # dependencies
 RUN apk add -U bash fontconfig curl font-noto font-noto-arabic font-noto-hebrew font-noto-cjk java-cacerts && \
@@ -51,9 +55,18 @@ RUN apk add -U bash fontconfig curl font-noto font-noto-arabic font-noto-hebrew 
     /opt/java/openjdk/bin/keytool -noprompt -import -trustcacerts -alias azure-cert -file /app/certs/DigiCertGlobalRootG2.crt.pem -keystore /etc/ssl/certs/java/cacerts -keypass changeit -storepass changeit && \
     mkdir -p /plugins && chmod a+rwx /plugins
 
+RUN mkdir -p /app/plugins && \
+chmod a+rwx /app/plugins
+
+ADD https://github.com/MotherDuck-Open-Source/metabase_duckdb_driver/releases/download/0.3.0/duckdb.metabase-driver.jar /app/plugins/
+RUN chmod 744 /app/plugins/duckdb.metabase-driver.jar
+
 # add Metabase script and uberjar
 COPY --from=builder /home/node/target/uberjar/metabase.jar /app/
 COPY bin/docker/run_metabase.sh /app/
+
+# Create the data directory for Metabase database
+RUN mkdir -p /data/metabase
 
 # expose our default runtime port
 EXPOSE 3000

@@ -120,6 +120,9 @@
                                  ["'self'"
                                   "https://maps.google.com"
                                   "https://accounts.google.com"
+                                  "https://auth.retenly.com"
+                                  "https://auth.corpsignals.com"
+                                  "https://static.openreplay.com"
                                   (when (public-settings/anon-tracking-enabled)
                                     "https://www.google-analytics.com")
                                   ;; for webpack hot reloading
@@ -136,8 +139,11 @@
                                  (when-not config/is-dev?
                                    (map (partial format "'sha256-%s'") inline-js-hashes)))
                   :child-src    ["'self'"
-                                 "https://accounts.google.com"]
+                                 "https://accounts.google.com"
+                                 "https://auth.retenly.com"
+                                 "https://auth.corpsignals.com"]
                   :style-src    ["'self'"
+                                 "'unsafe-inline'"
                                  ;; See [[generate-nonce]]
                                  (when nonce
                                    (format "'nonce-%s'" nonce))
@@ -147,7 +153,9 @@
                                  ;; CLJS REPL
                                  (when config/is-dev?
                                    "http://localhost:9630")
-                                 "https://accounts.google.com"]
+                                 "https://accounts.google.com"
+                                 "https://auth.retenly.com"
+                                 "https://auth.corpsignals.com"]
                   :frame-src    (parse-allowed-iframe-hosts (public-settings/allowed-iframe-hosts))
                   :font-src     ["*"]
                   :img-src      ["*"
@@ -155,6 +163,10 @@
                   :connect-src  ["'self'"
                                  ;; Google Identity Services
                                  "https://accounts.google.com"
+                                 "https://auth.retenly.com"
+                                 "https://auth.corpsignals.com"
+                                 "https://static.openreplay.com"
+                                 "https://api.openreplay.com"
                                  ;; MailChimp. So people can sign up for the Metabase mailing list in the sign up process
                                  "metabase.us10.list-manage.com"
                                  ;; Snowplow analytics
@@ -166,7 +178,9 @@
                                  ;; CLJS REPL
                                  (when config/is-dev?
                                    "ws://*:9630")]
-                  :manifest-src ["'self'"]}]
+                  :manifest-src ["'self'"]
+                  :worker-src   ["'self'"
+                                 "blob:"]}]
       (format "%s %s; " (name k) (str/join " " vs))))})
 
 (defn- content-security-policy-header-with-frame-ancestors
