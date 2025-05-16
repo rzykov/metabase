@@ -36,7 +36,7 @@ RUN INTERACTIVE=false CI=true MB_EDITION=$MB_EDITION bin/build.sh :version ${VER
 ## jar from the previous stage rather than the local build
 ## we're not yet there to provide an ARM runner till https://github.com/adoptium/adoptium/issues/96 is ready
 
-FROM eclipse-temurin:21-jre-alpine as runner
+FROM eclipse-temurin:21-jre as runner
 
 ENV FC_LANG=en-US \
     LC_CTYPE=en_US.UTF-8 \
@@ -55,18 +55,13 @@ RUN apk add -U bash fontconfig curl font-noto font-noto-arabic font-noto-hebrew 
     /opt/java/openjdk/bin/keytool -noprompt -import -trustcacerts -alias azure-cert -file /app/certs/DigiCertGlobalRootG2.crt.pem -keystore /etc/ssl/certs/java/cacerts -keypass changeit -storepass changeit && \
     mkdir -p /plugins && chmod a+rwx /plugins
 
-RUN mkdir -p /app/plugins && \
-chmod a+rwx /app/plugins
+RUN mkdir -p /app/plugins /data/metabase && chmod -R a+rwx /app/plugins
 
 COPY duckdb.metabase-driver.jar /app/plugins/
 RUN chmod 744 /app/plugins/duckdb.metabase-driver.jar
 
-# add Metabase script and uberjar
 COPY --from=builder /home/node/target/uberjar/metabase.jar /app/
 COPY bin/docker/run_metabase.sh /app/
-
-# Create the data directory for Metabase database
-RUN mkdir -p /data/metabase
 
 # expose our default runtime port
 EXPOSE 3000
