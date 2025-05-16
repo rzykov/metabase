@@ -58,7 +58,7 @@ RUN apk add -U bash fontconfig curl font-noto font-noto-arabic font-noto-hebrew 
 RUN mkdir -p /app/plugins && \
 chmod a+rwx /app/plugins
 
-ADD https://github.com/MotherDuck-Open-Source/metabase_duckdb_driver/releases/download/0.3.0/duckdb.metabase-driver.jar /app/plugins/
+ADD https://github.com/MotherDuck-Open-Source/metabase_duckdb_driver/releases/download/0.2.12-b/duckdb.metabase-driver.jar /app/plugins/
 RUN chmod 744 /app/plugins/duckdb.metabase-driver.jar
 
 # add Metabase script and uberjar
