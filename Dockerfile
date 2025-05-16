@@ -45,7 +45,7 @@ ENV FC_LANG=en-US \
     MB_DB_FILE=/data/metabase/metabase.db
 
 # dependencies
-RUN apk add -U bash fontconfig curl font-noto font-noto-arabic font-noto-hebrew font-noto-cjk java-cacerts libstdc++  && \
+RUN apk add -U bash fontconfig curl font-noto font-noto-arabic font-noto-hebrew font-noto-cjk java-cacerts && \
     apk upgrade && \
     rm -rf /var/cache/apk/* && \
     mkdir -p /app/certs && \
@@ -58,7 +58,7 @@ RUN apk add -U bash fontconfig curl font-noto font-noto-arabic font-noto-hebrew 
 RUN mkdir -p /app/plugins && \
 chmod a+rwx /app/plugins
 
-ADD https://github.com/MotherDuck-Open-Source/metabase_duckdb_driver/releases/download/0.2.12-b/duckdb.metabase-driver.jar /app/plugins/
+COPY duckdb.metabase-driver.jar /app/plugins/
 RUN chmod 744 /app/plugins/duckdb.metabase-driver.jar
 
 # add Metabase script and uberjar
