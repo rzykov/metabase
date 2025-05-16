@@ -45,6 +45,8 @@ ENV FC_LANG=en-US \
     MB_DB_FILE=/data/metabase/metabase.db
 
 # dependencies
+ENV JAVA_CACERTS="$JAVA_HOME/lib/security/cacerts"
+
 RUN apt-get update && \
     apt-get install -y \
         bash \
@@ -58,10 +60,13 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /app/certs && \
     curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o /app/certs/rds-combined-ca-bundle.pem  && \
-    keytool -noprompt -import -trustcacerts -alias aws-rds -file /app/certs/rds-combined-ca-bundle.pem -keystore /etc/ssl/certs/java/cacerts -keypass changeit -storepass changeit && \
+    keytool -noprompt -import -trustcacerts -alias aws-rds \
+      -file /app/certs/rds-combined-ca-bundle.pem \
+      -keystore "$JAVA_CACERTS" -storepass changeit && \
     curl https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem -o /app/certs/DigiCertGlobalRootG2.crt.pem  && \
-    keytool -noprompt -import -trustcacerts -alias azure-cert -file /app/certs/DigiCertGlobalRootG2.crt.pem -keystore /etc/ssl/certs/java/cacerts -keypass changeit -storepass changeit
-
+    keytool -noprompt -import -trustcacerts -alias azure-cert \
+      -file /app/certs/DigiCertGlobalRootG2.crt.pem \
+      -keystore "$JAVA_CACERTS" -storepass changeit
 
 RUN mkdir -p /app/plugins /data/metabase && chmod -R a+rwx /app/plugins
 
