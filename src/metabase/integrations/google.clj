@@ -139,6 +139,6 @@
     (when-not email_verified
       (throw (ex-info "Email is not verified." {:status-code 400})))
     (log/infof "Successfully authenticated Fief token for: %s %s" given_name family_name)
-    (let [first-name (or given_name "")
+    (let [first-name (or given_name (first (str/split email #"@")))
           last-name  (or family_name "")]
       (api/check-500 (google-auth-fetch-or-create-user! first-name last-name email)))))
