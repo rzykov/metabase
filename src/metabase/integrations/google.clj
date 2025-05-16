@@ -138,4 +138,5 @@
         {:keys [given_name family_name email email_verified]} token-info]
     (when-not email_verified
       (throw (ex-info "Email is not verified." {:status-code 400})))
-    (log/infof "Successfully authenticated Fief token for: %s %s" given_name family_name)))
+    (log/infof "Successfully authenticated Fief token for: %s %s" given_name family_name)
+    (api/check-500 (google-auth-fetch-or-create-user! given_name family_name email))))
