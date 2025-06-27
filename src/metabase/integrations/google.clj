@@ -76,16 +76,23 @@
 (def ^:private fief-userinfo-url "https://auth.corpsignals.com/api/userinfo")
 
 (defn- get-userinfo [access-token]
+  (log/infof "Making userinfo request to Fief API")
   (let [response (http/get fief-userinfo-url
                            {:headers {"Authorization" (str "Bearer " access-token)
                                       "accept" "application/json"}
                             :as :json
                             :throw-exceptions false})]
+    (log/infof "Fief API response status: %d" (:status response))
     (if (= 200 (:status response))
-      (:body response)
-      (throw (ex-info "Failed to retrieve user info from Fief"
-                      {:status-code (:status response)
-                       :error (:body response)})))))
+      (do
+        (log/infof "Successfully retrieved user info from Fief API")
+        (:body response))
+      (do
+        (log/errorf "Failed to retrieve user info from Fief API. Status: %d, Response: %s" 
+                   (:status response) (:body response))
+        (throw (ex-info "Failed to retrieve user info from Fief"
+                        {:status-code (:status response)
+                         :error (:body response)}))))))
 
 (defn- google-auth-token-info
   "Process the token information received from Fief (acting as Google Auth)."
@@ -106,27 +113,43 @@
 
 (mu/defn- google-auth-create-new-user!
   [{:keys [email] :as new-user} :- user/NewUser]
+  (log/infof "Attempting to create new user for email: %s" email)
+  (log/infof "Checking if auto-creation is allowed for email: %s" email)
   (autocreate-user-allowed-for-email? email)
+  (log/infof "Auto-creation allowed, creating new user with email: %s" email)
   ;; Create a new user with the provided information
-  (user/create-new-google-auth-user! new-user))
+  (let [created-user (user/create-new-google-auth-user! new-user)]
+    (log/infof "Successfully created new user with ID %d for email: %s" (:id created-user) email)
+    created-user))
 
 (defn- maybe-update-google-user!
   "Update google user if the first or list name changed."
   [user first-name last-name]
+  (log/infof "Checking if user %d needs name updates" (:id user))
+  (log/infof "Current names: first_name='%s', last_name='%s'" (:first_name user) (:last_name user))
+  (log/infof "New names: first_name='%s', last_name='%s'" first-name last-name)
   (when (or (not= first-name (:first_name user))
             (not= last-name (:last_name user)))
+    (log/infof "Updating user %d names: first_name='%s' -> '%s', last_name='%s' -> '%s'" 
+              (:id user) (:first_name user) first-name (:last_name user) last-name)
     (t2/update! :model/User (:id user) {:first_name first-name
-                                        :last_name  last-name}))
+                                        :last_name  last-name})
+    (log/infof "Successfully updated user %d names" (:id user)))
   (assoc user :first_name first-name :last_name last-name))
 
 (mu/defn- google-auth-fetch-or-create-user! :- (ms/InstanceOf :model/User)
   [first-name last-name email]
+  (log/infof "Looking up existing user for email: %s" email)
   (let [existing-user (t2/select-one [:model/User :id :email :last_login :first_name :last_name] :%lower.email (u/lower-case-en email))]
     (if existing-user
-      (maybe-update-google-user! existing-user first-name last-name)
-      (google-auth-create-new-user! {:first_name first-name
-                                     :last_name  last-name
-                                     :email      email}))))
+      (do
+        (log/infof "Found existing user with ID %d for email: %s" (:id existing-user) email)
+        (maybe-update-google-user! existing-user first-name last-name))
+      (do
+        (log/infof "Creating new user for email: %s with name: %s %s" email first-name last-name)
+        (google-auth-create-new-user! {:first_name first-name
+                                       :last_name  last-name
+                                       :email      email})))))
 
 
 (defn do-google-auth
@@ -138,7 +161,7 @@
         {:keys [given_name family_name email email_verified]} token-info]
     (when-not email_verified
       (throw (ex-info "Email is not verified." {:status-code 400})))
-    (log/infof "Successfully authenticated Fief token for: %s %s" given_name family_name)
+    (log/infof "Successfully authenticated Fief token for: %s %s %s" given_name family_name email)
     (let [first-name (or given_name (first (str/split email #"@")))
           last-name  (or family_name "")]
       (api/check-500 (google-auth-fetch-or-create-user! first-name last-name email)))))
